@@ -1,0 +1,14 @@
+# 后端构建忽略文件
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+env
+.git
+.gitignore
+*.log
+.pytest_cache
+.mypy_cache
+fallback/*.bak

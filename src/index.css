@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============ 全局基础样式 ============ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-racing-dark text-zinc-100 font-body antialiased;
+  }
+
+  /* 赛车主题滚动条 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0a0f;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2c2c38;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #e10600;
+  }
+
+  ::selection {
+    background: #e10600;
+    color: #fff;
+  }
+}
+
+/* ============ 可复用组件类 ============ */
+@layer components {
+  /* 通用深色卡片 */
+  .card {
+    @apply rounded-2xl border border-white/[0.06] bg-racing-card transition-colors duration-300;
+  }
+
+  .card-hover {
+    @apply hover:border-white/20 hover:bg-racing-card-hover;
+  }
+
+  /* 页面大标题（赛车字体） */
+  .heading-display {
+    @apply font-display font-bold uppercase tracking-wide;
+  }
+
+  /* 红色主按钮 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-racing-red px-5 py-2.5
+      text-sm font-semibold text-white transition hover:bg-racing-red-dark
+      focus:outline-none focus:ring-2 focus:ring-racing-red/50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* 小型状态徽章 */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+}

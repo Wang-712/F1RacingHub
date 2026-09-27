@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "title": "Leclerc storms to Monza glory as Tifosi dream of title glory",
+    "date": "2026-09-06",
+    "category": "Race Report",
+    "summary": "Charles Leclerc held off a late charging Max Verstappen to win his second Italian Grand Prix, closing the gap to the championship leader to 90 points with seven rounds remaining.",
+    "readTime": "4 min"
+  },
+  {
+    "id": 2,
+    "title": "Hamilton admits Ferrari title challenge is 'slipping away'",
+    "date": "2026-09-10",
+    "category": "Interview",
+    "summary": "The seven-time champion was candid after a difficult Monza weekend, insisting the Scuderia must 'bring upgrades that actually work' if they are to fight in 2027.",
+    "readTime": "3 min"
+  },
+  {
+    "id": 3,
+    "title": "Verstappen bounces back with record-breaking Zandvoort win",
+    "date": "2026-08-30",
+    "category": "Race Report",
+    "summary": "On home soil, Max Verstappen delivered a masterclass to equal the record for most consecutive Dutch Grand Prix victories, leading every lap from pole position.",
+    "readTime": "5 min"
+  },
+  {
+    "id": 4,
+    "title": "McLaren tighten grip on Constructors' Championship after Spa thriller",
+    "date": "2026-08-02",
+    "category": "Analysis",
+    "summary": "A double podium in Belgium gave McLaren a commanding lead over Ferrari and Red Bull, with both papaya cars showing blistering straight-line speed.",
+    "readTime": "6 min"
+  },
+  {
+    "id": 5,
+    "title": "Rookie watch: Antonelli's wet-weather masterclass turns heads",
+    "date": "2026-09-14",
+    "category": "Feature",
+    "summary": "The 20-year-old Mercedes driver climbed from 14th to 5th in changeable conditions at Spa, drawing comparisons to a young Hamilton from paddock insiders.",
+    "readTime": "4 min"
+  },
+  {
+    "id": 6,
+    "title": "F1 confirms six sprint races for expanded 2027 calendar",
+    "date": "2026-09-16",
+    "category": "Regulations",
+    "summary": "The FIA and Formula 1 announced the 2027 calendar will feature a record 25 rounds, including six sprint weekends and the long-awaited return to a European classic.",
+    "readTime": "2 min"
+  }
+]

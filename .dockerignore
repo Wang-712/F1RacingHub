@@ -1,0 +1,15 @@
+# 前端构建忽略文件
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+*.log
+backend
+# nginx 目录保留（Dockerfile 需要复制 nginx/default.conf）
+docker-compose.yml
+Dockerfile
+deploy.sh
+.dockerignore
