@@ -1,0 +1,70 @@
+name: Deploy to Alibaba Cloud
+
+# 触发条件：push 到 main 分支时自动部署；也支持在 Actions 页面手动运行
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一时间只允许一个部署任务，避免并发构建互相覆盖
+concurrency:
+  group: deploy-alibaba
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy to Alibaba Cloud
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          # 单条命令超时（docker build 首次较慢，给 20 分钟）
+          command_timeout: 20m
+          # 建立 SSH 连接超时
+          timeout: 30s
+          script: |
+            set -e
+            cd /opt/f1-racing-hub
+
+            echo "==> 拉取最新代码"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> 重新构建并启动容器"
+            docker compose up -d --build
+
+            echo "==> 清理悬空镜像"
+            docker image prune -f
+
+            echo "==> 等待容器就绪"
+            sleep 6
+
+            echo "==> 健康检查"
+            docker compose ps
+
+            # 前端 /health
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -fsS --max-time 5 http://localhost/health >/dev/null 2>&1; then
+                echo "frontend /health OK"
+                break
+              fi
+              echo "  等待 frontend 启动... ($i/10)"
+              sleep 3
+            done
+
+            # 后端 /api/health
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -fsS --max-time 5 http://localhost/api/health >/dev/null 2>&1; then
+                echo "backend /api/health OK"
+                break
+              fi
+              echo "  等待 backend 启动... ($i/10)"
+              sleep 3
+            done
+
+            echo "==> 部署完成"
+            echo "访问地址: http://$(curl -s --max-time 5 https://api.ipify.org)/"
