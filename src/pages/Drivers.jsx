@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import DriverCard from '../components/DriverCard'
+import DriverLightbox from '../components/DriverLightbox'
 import { ErrorState, LoadingState } from '../components/AsyncState'
 import useApi from '../hooks/useApi'
 import { getDrivers, getTeams } from '../services/api'
@@ -16,6 +17,8 @@ export default function Drivers() {
   const [keyword, setKeyword] = useState('')
   const [teamFilter, setTeamFilter] = useState('all')
   const [sortBy, setSortBy] = useState('points') // points | seasonWins | championships
+  // 当前正在预览大图的车手（null = 关闭）
+  const [preview, setPreview] = useState(null)
 
   const allDrivers = drivers || []
   const allTeams = teams || []
@@ -112,6 +115,7 @@ export default function Drivers() {
               key={driver.id}
               driver={driver}
               rank={sortBy === 'points' ? standingsRank[driver.id] : undefined}
+              onPreview={setPreview}
             />
           ))}
         </div>
@@ -120,6 +124,9 @@ export default function Drivers() {
           没有符合条件的车手。
         </div>
       )}
+
+      {/* 定妆照大图预览 */}
+      <DriverLightbox photo={preview} onClose={() => setPreview(null)} />
     </div>
   )
 }

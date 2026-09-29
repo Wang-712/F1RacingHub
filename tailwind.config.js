@@ -28,10 +28,20 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.3' },
         },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'zoom-in': {
+          '0%': { opacity: '0', transform: 'scale(0.94)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         'fade-in-up': 'fade-in-up 0.5s ease-out both',
         'pulse-dot': 'pulse-dot 1.5s ease-in-out infinite',
+        'fade-in': 'fade-in 0.2s ease-out both',
+        'zoom-in': 'zoom-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },

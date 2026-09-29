@@ -1,41 +1,40 @@
 import { Link } from 'react-router-dom'
-import Flag from './Flag'
+import DriverPhoto from './DriverPhoto'
 
 /**
  * 车手卡片
- * 顶部为大号车号 + 车队配色渐变的视觉区域（替代头像），
- * 下方展示车手基本信息与赛季数据，点击跳转车手详情页。
+ * 顶部为车手专属定妆照（带车队配色渐变与车号水印），
+ * 下方展示车手基本信息与赛季数据。
+ * - 点击照片：打开定妆照大图预览（DriverPhoto 内部处理）
+ * - 点击卡片其余区域：跳转车手详情页（绝对定位覆盖层链接）
  */
-export default function DriverCard({ driver, rank }) {
+export default function DriverCard({ driver, rank, onPreview }) {
   return (
-    <Link
-      to={`/drivers/${driver.id}`}
-      className="card card-hover group relative flex flex-col overflow-hidden"
-    >
-      {/* 顶部车号视觉区：随车队主题色变化 */}
-      <div
-        className="relative flex h-28 items-center justify-between overflow-hidden px-5"
-        style={{
-          background: `linear-gradient(120deg, ${driver.teamColor}26 0%, rgba(10,10,15,0) 70%)`,
-        }}
-      >
-        {/* 左侧车队色条 */}
-        <span
-          className="absolute inset-y-0 left-0 w-1"
-          style={{ backgroundColor: driver.teamColor }}
-        />
-        <span className="text-5xl font-bold text-white/15 transition-colors duration-300 group-hover:text-white/25">
-          {String(driver.number).padStart(2, '0')}
+    <div className="card card-hover group relative flex flex-col overflow-hidden">
+      {/* 整卡跳转覆盖层（照片按钮层级更高，不会被它拦截） */}
+      <Link
+        to={`/drivers/${driver.id}`}
+        aria-label={`查看 ${driver.name} 的车手档案`}
+        className="absolute inset-0 z-0"
+      />
+
+      {/* 排行榜角标 */}
+      {rank != null && (
+        <span className="absolute left-3 top-3 z-20 rounded-md bg-black/55 px-2 py-0.5 font-display text-xs font-bold text-white/80 backdrop-blur-sm">
+          P{rank}
         </span>
-        <Flag
-          code={driver.flag}
-          width={38}
-          className="transition-transform duration-300 group-hover:scale-110"
-        />
-      </div>
+      )}
+
+      {/* 车手定妆照 */}
+      <DriverPhoto
+        driver={driver}
+        variant="card"
+        onPreview={onPreview}
+        className="relative z-10 rounded-b-none border-x-0 border-t-0"
+      />
 
       {/* 信息区 */}
-      <div className="flex flex-1 flex-col px-5 pb-5">
+      <div className="relative z-0 flex flex-1 flex-col px-5 pb-5 pt-4">
         <h3 className="font-display text-xl font-bold text-white">
           {driver.name}
         </h3>
@@ -75,13 +74,6 @@ export default function DriverCard({ driver, rank }) {
           </div>
         </div>
       </div>
-
-      {/* 排行榜角标（可选） */}
-      {rank != null && (
-        <span className="absolute right-4 top-3 rounded-md bg-black/40 px-2 py-0.5 font-display text-xs font-bold text-white/70">
-          P{rank}
-        </span>
-      )}
-    </Link>
+    </div>
   )
 }

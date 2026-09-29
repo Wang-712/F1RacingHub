@@ -1,6 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Chart from '../components/Chart'
+import DriverPhoto from '../components/DriverPhoto'
+import DriverLightbox from '../components/DriverLightbox'
 import Flag from '../components/Flag'
 import { LoadingState } from '../components/AsyncState'
 import useApi from '../hooks/useApi'
@@ -24,6 +26,9 @@ export default function DriverDetail() {
     () => getDriverDetail(id),
     [id]
   )
+
+  // 定妆照大图预览
+  const [preview, setPreview] = useState(null)
 
   // 雷达图配置（依赖 driver）
   const radarOption = useMemo(() => {
@@ -165,18 +170,16 @@ export default function DriverDetail() {
             background: `linear-gradient(120deg, ${driver.teamColor}30 0%, rgba(10,10,15,0.96) 60%)`,
           }}
         />
-        <div className="relative flex flex-col gap-6 p-6 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-6">
-            {/* 大号车号 */}
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/40 sm:h-32 sm:w-32">
-              <span
-                className="font-display text-6xl font-bold sm:text-7xl"
-                style={{ color: driver.teamColor }}
-              >
-                {driver.number || '-'}
-              </span>
-            </div>
-            <div>
+        <div className="relative flex flex-col gap-6 p-5 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:p-10">
+          {/* 定妆照 + 姓名等基本信息（照片位于显著位置，点击可看大图） */}
+          <div className="flex items-end gap-4 sm:gap-7">
+            <DriverPhoto
+              driver={driver}
+              variant="hero"
+              eager
+              onPreview={setPreview}
+            />
+            <div className="min-w-0 pb-1 sm:pb-2">
               <div className="flex flex-wrap items-center gap-3">
                 <Flag code={driver.flag} width={44} />
                 {driver.championships > 0 && (
@@ -185,10 +188,10 @@ export default function DriverDetail() {
                   </span>
                 )}
               </div>
-              <h1 className="mt-2 font-display text-3xl font-bold uppercase text-white sm:text-5xl">
+              <h1 className="mt-2 break-words font-display text-3xl font-bold uppercase leading-none text-white sm:text-5xl">
                 {driver.name}
               </h1>
-              <p className="mt-2 flex items-center gap-2 text-sm text-zinc-300">
+              <p className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
                 <span
                   className="h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: driver.teamColor }}
@@ -199,7 +202,7 @@ export default function DriverDetail() {
           </div>
 
           {/* 本赛季积分大数字 */}
-          <div className="shrink-0 rounded-2xl border border-white/10 bg-black/30 px-8 py-5 text-center backdrop-blur-sm">
+          <div className="shrink-0 self-start rounded-2xl border border-white/10 bg-black/30 px-8 py-5 text-center backdrop-blur-sm lg:self-auto">
             <p className="font-display text-5xl font-bold text-white">
               {driver.points}
             </p>
@@ -325,6 +328,9 @@ export default function DriverDetail() {
           )}
         </div>
       </section>
+
+      {/* 定妆照大图预览 */}
+      <DriverLightbox photo={preview} onClose={() => setPreview(null)} />
     </div>
   )
 }
