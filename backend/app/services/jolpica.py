@@ -36,6 +36,8 @@ class JolpicaClient:
                 base_url=settings.F1_API_BASE,
                 timeout=settings.HTTP_TIMEOUT,
                 headers={"User-Agent": "F1RacingHub/1.0 (+demo backend)"},
+                # 忽略系统代理（Windows 注册表代理会导致 TLS 握手 EOF）
+                trust_env=False,
             )
 
     async def shutdown(self) -> None:

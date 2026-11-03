@@ -11,10 +11,10 @@ import { useEffect, useState } from 'react'
  */
 
 const HIGHLIGHTS = [
-  { label: '最年轻世界冠军', value: '20', suffix: '岁' },
-  { label: '夺冠天数', value: '68', suffix: '天' },
-  { label: '赛季胜场', value: '8', suffix: '场' },
-  { label: '赛季积分', value: '302', suffix: '分' },
+  { label: '夺冠年龄', value: '20', suffix: '岁零 68 天' },
+  { label: '赛季胜场', value: '9', suffix: '场' },
+  { label: '赛季积分', value: '380', suffix: '分' },
+  { label: '锁定冠军', value: 'R19', suffix: '墨西哥城' },
 ]
 
 const PHOTOS = [

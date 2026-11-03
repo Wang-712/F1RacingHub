@@ -69,10 +69,10 @@ async def _build_season_bundle() -> dict:
     """并行拉取积分榜 / 车队榜 / 赛历 / 正赛结果 / 冲刺赛结果并完成聚合。"""
     import asyncio
 
-    async def safe(coro, label: str):
+    async def safe(coro, label: str, budget: float = 30.0):
         try:
-            return await coro
-        except Exception as exc:  # 单个端点失败不应拖垮整包
+            return await asyncio.wait_for(coro, timeout=budget)
+        except Exception as exc:  # 单个端点失败或超时不应拖垮整包
             logger.warning("Jolpica endpoint %s failed: %s", label, exc)
             return None
 
@@ -80,8 +80,8 @@ async def _build_season_bundle() -> dict:
         safe(jolpica.driver_standings(), "driverStandings"),
         safe(jolpica.constructor_standings(), "constructorStandings"),
         safe(jolpica.schedule(), "schedule"),
-        safe(jolpica.race_results(), "results"),
-        safe(jolpica.sprint_results(), "sprint"),
+        safe(jolpica.race_results(), "results", 45.0),
+        safe(jolpica.sprint_results(), "sprint", 30.0),
     )
 
     if driver_json is None or schedule_json is None:
@@ -238,10 +238,14 @@ async def _get_bundle() -> Tuple[dict, str, bool]:
         bundle, from_cache = await cache.get_or_fetch(
             "season_bundle", settings.CACHE_SEASON_TTL, _build_season_bundle
         )
-        return bundle, "jolpica", from_cache
     except Exception as exc:
-        logger.error("Season bundle failed, using fallback snapshot: %s", exc)
-        return _build_fallback_bundle(), "fallback", False
+        logger.exception("Season bundle failed, using fallback snapshot: %s", exc)
+        bundle = _build_fallback_bundle()
+        # 降级结果也缓存一小段时间，避免每次请求都重复等待上游超时
+        cache.set("season_bundle", bundle, settings.CACHE_SEASON_FALLBACK_TTL)
+        from_cache = False
+    source = "fallback" if bundle.get("_fallback") else "jolpica"
+    return bundle, source, from_cache
 
 
 def _build_fallback_bundle() -> dict:
@@ -417,7 +421,9 @@ def _build_races(bundle: dict) -> List[dict]:
         circuit = item["Circuit"]
         country = circuit.get("Location", {}).get("country", "")
         result = bundle["resultMap"].get(rnd)
-        completed = rnd <= last_round and result is not None
+        # 已过比赛日期的轮次一律视为完赛；上游赛果缺失时仅缺 winner 字段
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        completed = rnd <= last_round or (item.get("date", "") and item["date"] < today)
 
         winner = ""
         winner_team = ""

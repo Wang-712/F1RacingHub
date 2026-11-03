@@ -1,50 +1,42 @@
 [
   {
-    "id": 1,
-    "title": "Russell 巴库夺冠，Mercedes 继续领跑双积分榜",
-    "date": "2026-09-26",
-    "category": "赛事报道",
-    "summary": "George Russell 在阿塞拜疆大奖赛拿下个人赛季第三胜，队友 Antonelli 守住积分领先，Mercedes 以 538 分在车队积分榜上遥遥领先。",
+    "id": 9,
+    "title": "巴西站前瞻：Antonelli 加冕后首战，车队冠军仍未锁定",
+    "date": "2026-11-03",
+    "category": "前瞻",
+    "summary": "刚锁定车手世界冠军的 Antonelli 将带着冠军身份来到英特拉格斯。Mercedes 以 630 分领跑车队积分榜，领先 Ferrari 126 分，但剩余 4 站 Ferrari 理论上仍有反超空间，车队冠军之争尚未结束。Verstappen 近 3 站两胜，力图守住年度第二。",
+    "readTime": "3 分钟"
+  },
+  {
+    "id": 8,
+    "title": "20 岁零 68 天：Antonelli 改写最年轻冠军纪录",
+    "date": "2026-11-02",
+    "category": "分析",
+    "summary": "出生于 2006 年 8 月 25 日的 Antonelli 在墨西哥城锁定冠军时年仅 20 岁零 68 天，将 Vettel 在 2010 年创下的 23 岁 134 天纪录提前近三年，成为 F1 历史上最年轻的车手世界冠军。",
     "readTime": "4 分钟"
   },
   {
-    "id": 2,
-    "title": "Antonelli 蒙扎称雄，Mercedes 主场包揽前二",
-    "date": "2026-09-06",
+    "id": 7,
+    "title": "Verstappen 墨西哥城夺冠，Antonelli 提前锁定世界冠军",
+    "date": "2026-11-01",
     "category": "赛事报道",
-    "summary": "Andrea Kimi Antonelli 在意大利大奖赛夺得分站胜利，队友 George Russell 紧随其后拿下第二，银箭军团在 Monza 完成 1-2 带回。",
-    "readTime": "3 分钟"
-  },
-  {
-    "id": 3,
-    "title": "Mercedes 统治排位赛，前 15 轮豪取 11 个杆位",
-    "date": "2026-09-01",
-    "category": "分析",
-    "summary": "2026 赛季前 15 轮排位赛中，Mercedes 凭借 Antonelli（6 杆）与 Russell（5 杆）的出色发挥拿下 11 个杆位，McLaren 以 4 杆位居第二，Ferrari 本赛季尚未在排位赛中登顶。",
-    "readTime": "3 分钟"
-  },
-  {
-    "id": 4,
-    "title": "Mercedes 青年军领跑：Antonelli 与 Russell 稳占积分榜前二",
-    "date": "2026-09-20",
-    "category": "分析",
-    "summary": "赛季 15 轮战罢，Mercedes 凭借 Antonelli（302 分）与 Russell（236 分）的稳定发挥，以 538 分在车队积分榜领先第二名 Ferrari 达 160 分，银箭王朝迎来新的黄金搭档。",
+    "summary": "Max Verstappen 在墨西哥城拿下赛季第三胜，但 Andrea Kimi Antonelli 凭借 380 比 261 分的积分优势提前 4 站锁定 2026 车手世界冠军，成为 F1 历史上首位在 20 岁登顶的车手。Mercedes 以 630 分继续领跑车队榜，车队冠军尚未决出。",
     "readTime": "5 分钟"
   },
   {
-    "id": 5,
-    "title": "新秀观察：Antonelli 8 胜领跑，被视为未来世界冠军",
-    "date": "2026-09-15",
-    "category": "特写",
-    "summary": "20 岁的 Mercedes 车手 Andrea Kimi Antonelli 本赛季已拿下 8 场分站胜利，以 302 分领跑车手积分榜，圈内人士将其比作年轻时的 Hamilton，认为他具备夺冠的全部潜质。",
+    "id": 10,
+    "title": "Antonelli 美国站拿下赛季第 9 胜，冠军优势进一步扩大",
+    "date": "2026-10-25",
+    "category": "赛事报道",
+    "summary": "Andrea Kimi Antonelli 在奥斯汀赛道夺下本赛季第 9 场分站胜利，将车手积分榜领先优势进一步扩大，距离个人首个世界冠军只剩数学上的确认。Leclerc 在本站收获最快圈。",
     "readTime": "4 分钟"
   },
   {
-    "id": 6,
-    "title": "F1 确认 2027 年赛历扩展，Audi 与 Cadillac 新军加入",
-    "date": "2026-09-10",
-    "category": "规则",
-    "summary": "FIA 与 F1 宣布 2027 赛季赛历将进一步扩充，包含更多冲刺周末，Audi 与 Cadillac 两支新军的加入让围场竞争更趋激烈，下一站将前往马来西亚雪邦赛道。",
-    "readTime": "2 分钟"
+    "id": 11,
+    "title": "Verstappen 新加坡夜赛夺冠，收获赛季第二胜",
+    "date": "2026-10-11",
+    "category": "赛事报道",
+    "summary": "Max Verstappen 在新加坡滨海湾赛道拿下赛季第二场胜利，Leclerc 收获最快圈。Antonelli 稳守积分榜首位，Mercedes 在车队积分榜上依然保持对 Ferrari 的明显领先。",
+    "readTime": "3 分钟"
   }
 ]

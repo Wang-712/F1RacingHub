@@ -1,19 +1,22 @@
 [
   {
-    "id": "red-bull",
-    "name": "Red Bull Racing",
-    "shortName": "Red Bull",
-    "color": "#3671C6",
-    "country": "Austria",
-    "flag": "🇦🇹",
-    "founded": 2005,
-    "championships": 6,
-    "principal": "Christian Horner",
-    "headquarters": "Milton Keynes, United Kingdom",
-    "seasonPoints": 429,
-    "seasonPosition": 3,
-    "drivers": ["Max Verstappen", "Yuki Tsunoda"],
-    "bio": "Four-time defending champions aiming to reclaim both titles with their star Dutch driver leading the charge."
+    "id": "mercedes",
+    "name": "Mercedes-AMG Petronas",
+    "shortName": "Mercedes",
+    "color": "#00D2BE",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "founded": 2010,
+    "championships": 8,
+    "principal": "Toto Wolff",
+    "headquarters": "Brackley, United Kingdom",
+    "seasonPoints": 630,
+    "seasonPosition": 1,
+    "drivers": [
+      "Andrea Kimi Antonelli",
+      "George Russell"
+    ],
+    "bio": "The dominant force of the turbo-hybrid era, rebuilding with a youthful new line-up for 2026."
   },
   {
     "id": "ferrari",
@@ -26,26 +29,32 @@
     "championships": 16,
     "principal": "Frédéric Vasseur",
     "headquarters": "Maranello, Italy",
-    "seasonPoints": 439,
+    "seasonPoints": 504,
     "seasonPosition": 2,
-    "drivers": ["Charles Leclerc", "Lewis Hamilton"],
+    "drivers": [
+      "Lewis Hamilton",
+      "Charles Leclerc"
+    ],
     "bio": "The most successful and oldest team in Formula 1 history, chasing a first drivers' title since 2007."
   },
   {
-    "id": "mercedes",
-    "name": "Mercedes-AMG Petronas",
-    "shortName": "Mercedes",
-    "color": "#27F4D2",
-    "country": "Germany",
-    "flag": "🇩🇪",
-    "founded": 2010,
-    "championships": 8,
-    "principal": "Toto Wolff",
-    "headquarters": "Brackley, United Kingdom",
-    "seasonPoints": 318,
-    "seasonPosition": 4,
-    "drivers": ["George Russell", "Kimi Antonelli"],
-    "bio": "The dominant force of the turbo-hybrid era, rebuilding with a youthful new line-up for 2026."
+    "id": "red-bull",
+    "name": "Red Bull Racing",
+    "shortName": "Red Bull",
+    "color": "#3671C6",
+    "country": "Austria",
+    "flag": "🇦🇹",
+    "founded": 2005,
+    "championships": 6,
+    "principal": "Christian Horner",
+    "headquarters": "Milton Keynes, United Kingdom",
+    "seasonPoints": 382,
+    "seasonPosition": 3,
+    "drivers": [
+      "Max Verstappen",
+      "Isack Hadjar"
+    ],
+    "bio": "Four-time defending champions aiming to reclaim both titles with their star Dutch driver leading the charge."
   },
   {
     "id": "mclaren",
@@ -58,58 +67,13 @@
     "championships": 9,
     "principal": "Andrea Stella",
     "headquarters": "Woking, United Kingdom",
-    "seasonPoints": 524,
-    "seasonPosition": 1,
-    "drivers": ["Lando Norris", "Oscar Piastri"],
+    "seasonPoints": 365,
+    "seasonPosition": 4,
+    "drivers": [
+      "Lando Norris",
+      "Oscar Piastri"
+    ],
     "bio": "The papaya squad leads both championships and is chasing its first constructors' crown since 1998."
-  },
-  {
-    "id": "aston-martin",
-    "name": "Aston Martin Aramco",
-    "shortName": "Aston Martin",
-    "color": "#229971",
-    "country": "United Kingdom",
-    "flag": "🇬🇧",
-    "founded": 2021,
-    "championships": 0,
-    "principal": "Mike Krack",
-    "headquarters": "Silverstone, United Kingdom",
-    "seasonPoints": 153,
-    "seasonPosition": 5,
-    "drivers": ["Fernando Alonso", "Lance Stroll"],
-    "bio": "The green works team with grand ambitions, led on track by double world champion Fernando Alonso."
-  },
-  {
-    "id": "alpine",
-    "name": "BWT Alpine",
-    "shortName": "Alpine",
-    "color": "#0093CC",
-    "country": "France",
-    "flag": "🇫🇷",
-    "founded": 2021,
-    "championships": 0,
-    "principal": "Oliver Oakes",
-    "headquarters": "Enstone, United Kingdom",
-    "seasonPoints": 72,
-    "seasonPosition": 7,
-    "drivers": ["Pierre Gasly", "Jack Doohan"],
-    "bio": "Renault's works team in blue and pink, fighting to return to the competitive midfield and beyond."
-  },
-  {
-    "id": "williams",
-    "name": "Williams Racing",
-    "shortName": "Williams",
-    "color": "#64C4FF",
-    "country": "United Kingdom",
-    "flag": "🇬🇧",
-    "founded": 1977,
-    "championships": 9,
-    "principal": "James Vowles",
-    "headquarters": "Grove, United Kingdom",
-    "seasonPoints": 140,
-    "seasonPosition": 6,
-    "drivers": ["Carlos Sainz", "Alexander Albon"],
-    "bio": "A legendary nine-time champion constructor on a steady revival under new leadership."
   },
   {
     "id": "rb",
@@ -122,10 +86,33 @@
     "championships": 0,
     "principal": "Laurent Mekies",
     "headquarters": "Faenza, Italy",
-    "seasonPoints": 34,
-    "seasonPosition": 8,
-    "drivers": ["Isack Hadjar", "Ayumu Iwasa"],
+    "seasonPoints": 108,
+    "seasonPosition": 5,
+    "drivers": [
+      "Liam Lawson",
+      "Arvid Lindblad",
+      "Yuki Tsunoda"
+    ],
     "bio": "Red Bull's sister squad, famous for developing young talent — including a certain Max Verstappen."
+  },
+  {
+    "id": "alpine",
+    "name": "BWT Alpine",
+    "shortName": "Alpine",
+    "color": "#FF87BC",
+    "country": "France",
+    "flag": "🇫🇷",
+    "founded": 2021,
+    "championships": 0,
+    "principal": "Oliver Oakes",
+    "headquarters": "Enstone, United Kingdom",
+    "seasonPoints": 69,
+    "seasonPosition": 6,
+    "drivers": [
+      "Pierre Gasly",
+      "Franco Colapinto"
+    ],
+    "bio": "Renault's works team in blue and pink, fighting to return to the competitive midfield and beyond."
   },
   {
     "id": "haas",
@@ -138,25 +125,89 @@
     "championships": 0,
     "principal": "Guenther Steiner",
     "headquarters": "Kannapolis, United States",
-    "seasonPoints": 30,
-    "seasonPosition": 9,
-    "drivers": ["Esteban Ocon", "Oliver Bearman"],
+    "seasonPoints": 31,
+    "seasonPosition": 7,
+    "drivers": [
+      "Oliver Bearman",
+      "Esteban Ocon",
+      "Ryo Hirakawa"
+    ],
     "bio": "America's home team, punching above its weight with an experienced rookie line-up for 2026."
   },
   {
-    "id": "kick-sauber",
-    "name": "Stake F1 Team Kick Sauber",
-    "shortName": "Kick Sauber",
+    "id": "audi",
+    "name": "Audi",
+    "shortName": "Audi",
     "color": "#52E252",
-    "country": "Switzerland",
-    "flag": "🇨🇭",
-    "founded": 1993,
+    "country": "",
+    "flag": "",
+    "founded": 0,
     "championships": 0,
-    "principal": "Alessandro Alunni Bravi",
-    "headquarters": "Hinwil, Switzerland",
-    "seasonPoints": 28,
+    "principal": "",
+    "headquarters": "",
+    "seasonPoints": 27,
+    "seasonPosition": 8,
+    "drivers": [
+      "Gabriel Bortoleto",
+      "Nico Hülkenberg"
+    ],
+    "bio": ""
+  },
+  {
+    "id": "williams",
+    "name": "Williams Racing",
+    "shortName": "Williams",
+    "color": "#64C4FF",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "founded": 1977,
+    "championships": 9,
+    "principal": "James Vowles",
+    "headquarters": "Grove, United Kingdom",
+    "seasonPoints": 12,
+    "seasonPosition": 9,
+    "drivers": [
+      "Carlos Sainz",
+      "Alexander Albon"
+    ],
+    "bio": "A legendary nine-time champion constructor on a steady revival under new leadership."
+  },
+  {
+    "id": "aston-martin",
+    "name": "Aston Martin Aramco",
+    "shortName": "Aston Martin",
+    "color": "#006F62",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "founded": 2021,
+    "championships": 0,
+    "principal": "Mike Krack",
+    "headquarters": "Silverstone, United Kingdom",
+    "seasonPoints": 7,
     "seasonPosition": 10,
-    "drivers": ["Nico Hülkenberg", "Gabriel Bortoleto"],
-    "bio": "The Swiss squad beginning its transition into the Audi works project from 2026 onwards."
+    "drivers": [
+      "Fernando Alonso",
+      "Lance Stroll"
+    ],
+    "bio": "The green works team with grand ambitions, led on track by double world champion Fernando Alonso."
+  },
+  {
+    "id": "cadillac",
+    "name": "Cadillac F1 Team",
+    "shortName": "Cadillac F1 Team",
+    "color": "#B08040",
+    "country": "",
+    "flag": "",
+    "founded": 0,
+    "championships": 0,
+    "principal": "",
+    "headquarters": "",
+    "seasonPoints": 0,
+    "seasonPosition": 11,
+    "drivers": [
+      "Valtteri Bottas",
+      "Sergio Pérez"
+    ],
+    "bio": ""
   }
 ]
