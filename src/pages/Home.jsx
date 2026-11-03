@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ChampionBanner from '../components/ChampionBanner'
 import Chart from '../components/Chart'
 import Flag from '../components/Flag'
 import { DataSourceBadge, ErrorState, LoadingState } from '../components/AsyncState'
@@ -204,28 +205,32 @@ export default function Home() {
     }
   }, [teams])
 
-  // 首屏关键数据未就绪：整页加载态
-  if (seasonReq.loading || driversReq.loading) {
-    return <LoadingState label="正在加载 F1 实时数据..." height={520} />
-  }
-
-  // 赛季与车手同时失败：错误兜底
-  if (seasonReq.error && driversReq.error) {
-    return (
-      <ErrorState
-        message={seasonReq.error}
-        onRetry={() => {
-          seasonReq.reload()
-          driversReq.reload()
-        }}
-        height={480}
-      />
-    )
-  }
-
+  // 冠军横幅是静态内容，始终渲染；其后的数据区根据状态决定
   return (
     <div className="space-y-8">
-      {/* ============ Hero 赛季横幅 ============ */}
+      {/* ============ 🏆 2026 冠军纪念横幅（始终可见） ============ */}
+      <ChampionBanner />
+
+      {/* ============ 数据依赖区 ============ */}
+      {(() => {
+        if (seasonReq.loading || driversReq.loading) {
+          return <LoadingState label="正在加载 F1 实时数据..." height={520} />
+        }
+        if (seasonReq.error && driversReq.error) {
+          return (
+            <ErrorState
+              message={seasonReq.error}
+              onRetry={() => {
+                seasonReq.reload()
+                driversReq.reload()
+              }}
+              height={480}
+            />
+          )
+        }
+        return (
+          <>
+            {/* ============ Hero 赛季横幅 ============ */}
       <section className="relative overflow-hidden rounded-3xl border border-white/[0.06]">
         {/* 背景装饰：红色速度光带 */}
         <div className="absolute inset-0 bg-gradient-to-br from-racing-red/25 via-racing-dark to-racing-dark" />
@@ -551,6 +556,9 @@ export default function Home() {
           </div>
         )}
       </section>
+          </>
+        )
+      })()}
     </div>
   )
 }

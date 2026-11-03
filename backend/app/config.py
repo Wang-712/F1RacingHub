@@ -11,9 +11,13 @@ from pathlib import Path
 class Settings:
     # 上游真实 F1 数据源：Jolpica（已关停的 Ergast API 的社区延续）
     F1_API_BASE: str = os.getenv("F1_API_BASE", "https://api.jolpi.ca/ergast/f1")
-    HTTP_TIMEOUT: float = float(os.getenv("F1_HTTP_TIMEOUT", "20"))
+    HTTP_TIMEOUT: float = float(os.getenv("F1_HTTP_TIMEOUT", "60"))
     # 免费服务有速率限制，分页请求之间的礼貌间隔（秒）
     REQUEST_INTERVAL: float = float(os.getenv("F1_REQUEST_INTERVAL", "0.6"))
+    # 详情页职业数据单项抓取的最长等待（秒），超时降级到静态数据
+    CAREER_TIMEOUT: float = float(os.getenv("F1_CAREER_TIMEOUT", "50"))
+    # 职业数据抓取失败后的负缓存（秒）：避免每次访问都重试慢上游
+    CAREER_NEG_TTL: int = int(os.getenv("CAREER_NEG_TTL", "600"))
 
     # 各类数据的内存缓存有效期（秒）
     CACHE_STANDINGS_TTL: int = int(os.getenv("CACHE_STANDINGS_TTL", "600"))       # 积分榜 10 分钟

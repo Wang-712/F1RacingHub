@@ -120,9 +120,9 @@ class JolpicaClient:
         return await self.fetch(f"/drivers/{driver_id}/results.json")
 
     async def driver_champion_seasons(self, driver_id: str) -> Dict[str, Any]:
-        # position=1 只返回其获得世界冠军的赛季
+        # Ergast 语法：年终排名作为路径段（/driverStandings/1），只返回夺冠赛季
         return await self.fetch(
-            f"/drivers/{driver_id}/driverStandings.json?position=1", paginate=False
+            f"/drivers/{driver_id}/driverStandings/1.json", paginate=False
         )
 
     async def driver_qualifying(self, driver_id: str) -> Dict[str, Any]:

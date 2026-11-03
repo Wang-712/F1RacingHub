@@ -10,6 +10,7 @@ F1 业务服务层
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -97,6 +98,7 @@ async def _build_season_bundle() -> dict:
     # ---- 赛果索引：round -> race（含 Results） ----
     # Jolpica 的 results.json 按"车手记录"分页，同一轮次会出现在多个 race 对象中，
     # 每个 race.Results 只含部分车手，因此必须按 round 合并而非覆盖。
+    # 如果上游 results 超时/不可用，降级用 fallback races 标记已完成轮次（赛历状态仍然正确）。
     result_map: Dict[int, dict] = {}
     if results_json:
         for race in results_json["MRData"]["RaceTable"]["Races"]:
@@ -105,6 +107,62 @@ async def _build_season_bundle() -> dict:
                 result_map[rnd] = race
             else:
                 result_map[rnd]["Results"].extend(race.get("Results", []))
+    else:
+        # 上游 results 超时：用 fallback 快照按**比赛核心名称**补全，
+        # 因为 Jolpica 的 2026 赛历和本地 fallback 可能版本不同（轮数/名称有漂移）。
+        fallback_races = _load_fallback("races")
+
+        def _core(name: str) -> str:
+            """从 'Australian Grand Prix' / 'Bahrain GP in Malaysia' 提取核心词 'australian' / 'bahrain'"""
+            n = (name or "").lower().strip()
+            n = n.replace("grand prix", "").replace(" gp", "").replace("gp", "")
+            n = n.replace(" in malaysia", "").replace(" malaysia", "")
+            # 特殊映射：不同赛历版本的名称差异
+            alias = {
+                "são paulo": "brazilian", "sao paulo": "brazilian", "brazilian": "brazilian",
+                "spanish": "spanish", "barcelona": "spanish",  # 部分赛历把西班牙站叫 Barcelona
+                "emilia-romagna": "emilia", "imola": "emilia",
+                "saudi arabian": "saudi", "saudi": "saudi",
+                "dutch": "dutch", "zandvoort": "dutch",
+                "mexico city": "mexico", "mexican": "mexico",
+                "united states": "us", "usa": "us", "americas": "us",
+            }
+            for old, new in alias.items():
+                if old in n:
+                    n = new
+                    break
+            return n.strip("- ").strip()
+
+        # fallback 核心词 → race 映射（有多个同核心词取第一个 completed）
+        fb_by_core: Dict[str, dict] = {}
+        for r in fallback_races:
+            if r.get("status") != "completed":
+                continue
+            core = _core(r.get("name", "") or r.get("shortName", ""))
+            if core and core not in fb_by_core:
+                fb_by_core[core] = r
+
+        # 遍历 Jolpica schedule（正确的 round/date/name），尝试按核心词匹配 fallback winner
+        matched = 0
+        for item in schedule:
+            rnd = _to_int(item["round"])
+            schedule_core = _core(item.get("raceName", ""))
+            if not schedule_core:
+                continue
+            fb = fb_by_core.get(schedule_core)
+            # 再尝试：fallback 核心词 包含 在 schedule 名里
+            if fb is None:
+                for fb_core, fb_race in fb_by_core.items():
+                    if fb_core in schedule_core or schedule_core in fb_core:
+                        fb = fb_race
+                        break
+            if fb:
+                result_map[rnd] = {"_fallbackRace": fb}
+                matched += 1
+        logger.warning(
+            "Upstream race results unavailable, matched %d completed rounds by race core name",
+            matched,
+        )
 
     # ---- 冲刺积分：round -> {driverId: points} ----
     # 同理，sprint.json 也按车手记录分页，需用 setdefault 累加，不能每轮重置。
@@ -366,18 +424,26 @@ def _build_races(bundle: dict) -> List[dict]:
         fastest_driver = ""
         laps = enr.CIRCUIT_LAPS.get(circuit.get("circuitId", ""))
         if result:
-            rows = result.get("Results") or []
-            if rows:
-                top = rows[0]
-                winner = f"{top['Driver']['givenName']} {top['Driver']['familyName']}"
-                winner_team = enr.get_constructor(
-                    top["Constructor"]["constructorId"]
-                )["name"]
-                laps = laps or _to_int(top.get("laps"))
-            for row in rows:
-                if (row.get("FastestLap") or {}).get("rank") == "1":
-                    fastest_driver = f"{row['Driver']['givenName']} {row['Driver']['familyName']}"
-                    break
+            # 如果是 fallbackRace 形式（上游 results 不可用时降级），直接取简化字段
+            fb_res = result.get("_fallbackRace")
+            if fb_res:
+                winner = fb_res.get("winner", "")
+                winner_team = fb_res.get("winningTeam", "")
+                fastest_driver = fb_res.get("fastestLap", "")
+                laps = fb_res.get("laps", laps)
+            else:
+                rows = result.get("Results") or []
+                if rows:
+                    top = rows[0]
+                    winner = f"{top['Driver']['givenName']} {top['Driver']['familyName']}"
+                    winner_team = enr.get_constructor(
+                        top["Constructor"]["constructorId"]
+                    )["name"]
+                    laps = laps or _to_int(top.get("laps"))
+                for row in rows:
+                    if (row.get("FastestLap") or {}).get("rank") == "1":
+                        fastest_driver = f"{row['Driver']['givenName']} {row['Driver']['familyName']}"
+                        break
 
         race_name = item.get("raceName", "")
         races.append({
@@ -468,21 +534,23 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
     model = _driver_view_model(row, bundle)
     model["fastestLaps"] = bundle.get("fastestLaps", {}).get(model["name"], 0)
 
-    # ---- 实时职业履历（详情页才请求，24h 缓存；失败逐项降级） ----
+    # ---- 实时职业履历（详情页才请求，24h 缓存） ----
+    # 三项并行抓取，各自带超时预算；超时/失败降级到静态 enrichment 数据
     live: Dict[str, Any] = {}
     if not bundle.get("_fallback"):
-        try:
+
+        async def _fetch_titles() -> Dict[str, Any]:
             titles_json, _ = await cache.get_or_fetch(
                 f"career_titles_{did}", settings.CACHE_CAREER_TTL,
                 lambda: jolpica.driver_champion_seasons(did),
             )
-            live["championships"] = len(
-                titles_json["MRData"]["StandingsTable"]["StandingsLists"]
-            )
-        except Exception as exc:
-            logger.info("career titles fallback for %s: %s", did, exc)
+            return {
+                "championships": len(
+                    titles_json["MRData"]["StandingsTable"]["StandingsLists"]
+                )
+            }
 
-        try:
+        async def _fetch_results() -> Dict[str, Any]:
             results_json, _ = await cache.get_or_fetch(
                 f"career_results_{did}", settings.CACHE_CAREER_TTL,
                 lambda: jolpica.driver_career_results(did),
@@ -495,12 +563,9 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
                         wins += 1
                     if pos <= 3:
                         podiums += 1
-            live["careerWins"] = wins
-            live["podiums"] = podiums
-        except Exception as exc:
-            logger.info("career results fallback for %s: %s", did, exc)
+            return {"careerWins": wins, "podiums": podiums}
 
-        try:
+        async def _fetch_poles() -> Dict[str, Any]:
             qualifying_json, _ = await cache.get_or_fetch(
                 f"career_poles_{did}", settings.CACHE_CAREER_TTL,
                 lambda: jolpica.driver_qualifying(did),
@@ -510,9 +575,27 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
                 for q in race.get("QualifyingResults", []):
                     if q.get("position") == "1":
                         poles += 1
-            live["poles"] = poles
-        except Exception as exc:
-            logger.info("career poles fallback for %s: %s", did, exc)
+            return {"poles": poles}
+
+        async def _budget(coro, label: str, cache_key: str) -> Optional[Dict[str, Any]]:
+            """限时抓取；失败/超时写入短时负缓存，避免每次访问都重试慢上游。"""
+            fail_key = f"{cache_key}_failed"
+            if cache.get(fail_key):
+                return None
+            try:
+                return await asyncio.wait_for(coro, timeout=settings.CAREER_TIMEOUT)
+            except Exception as exc:
+                logger.info("career %s fallback for %s: %s", label, did, exc)
+                cache.set(fail_key, True, settings.CAREER_NEG_TTL)
+                return None
+
+        for part in await asyncio.gather(
+            _budget(_fetch_titles(), "titles", f"career_titles_{did}"),
+            _budget(_fetch_results(), "results", f"career_results_{did}"),
+            _budget(_fetch_poles(), "poles", f"career_poles_{did}"),
+        ):
+            if part:
+                live.update(part)
 
     model.update({k: v for k, v in live.items() if v is not None})
     return _envelope(model, source, bundle["season"], cached)
@@ -543,3 +626,12 @@ async def get_statistics_response() -> dict:
     }
     return _envelope(data, source if fastest or teams else "fallback",
                      bundle["season"], cached)
+
+
+async def warmup_cache() -> None:
+    """服务启动后后台预热赛季数据大包，让首个用户请求直接命中缓存。"""
+    try:
+        await _get_bundle()
+        logger.info("Season bundle warmup complete")
+    except Exception as exc:
+        logger.warning("Season bundle warmup failed: %s", exc)

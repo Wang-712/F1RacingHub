@@ -77,10 +77,12 @@ export default function DriverDetail() {
   // 积分走势图配置
   const progressionOption = useMemo(() => {
     if (!driver?.progression?.length) return null
+    const isChampion = driver.id === 'antonelli'
+    const championIdx = 18 // R19（index 0-based，第 19 场）
     return {
       color: [driver.teamColor],
       tooltip: { ...baseTooltip, trigger: 'axis' },
-      grid: { top: 24, right: 20, bottom: 32, left: 44 },
+      grid: { top: 36, right: 20, bottom: 32, left: 44 },
       xAxis: {
         type: 'category',
         ...categoryAxis,
@@ -94,8 +96,8 @@ export default function DriverDetail() {
           type: 'line',
           smooth: true,
           symbol: 'circle',
-          symbolSize: 7,
-          lineStyle: { width: 3 },
+          symbolSize: isChampion ? 8 : 7,
+          lineStyle: { width: isChampion ? 4 : 3 },
           areaStyle: {
             color: {
               type: 'linear',
@@ -107,6 +109,53 @@ export default function DriverDetail() {
             },
           },
           data: driver.progression,
+          // 🏆 Antonelli 专属：第 19 场冠军奖杯标记
+          ...(isChampion && driver.progression.length > championIdx ? {
+            markPoint: {
+              symbol: 'pin',
+              symbolSize: 64,
+              label: {
+                show: true,
+                formatter: '👑',
+                fontSize: 24,
+                lineHeight: 28,
+              },
+              itemStyle: {
+                color: '#fbbf24',
+                borderColor: '#f59e0b',
+                borderWidth: 3,
+              },
+              data: [
+                {
+                  xAxis: championIdx,
+                  yAxis: driver.progression[championIdx],
+                  name: 'World Champion',
+                },
+              ],
+            },
+            markLine: {
+              silent: true,
+              symbol: 'none',
+              lineStyle: {
+                color: '#fbbf24',
+                type: 'dashed',
+                width: 2,
+              },
+              label: {
+                show: true,
+                formatter: '👑 锁定冠军',
+                position: 'end',
+                color: '#fbbf24',
+                fontSize: 12,
+                fontWeight: 700,
+              },
+              data: [
+                {
+                  xAxis: championIdx,
+                },
+              ],
+            },
+          } : {}),
         },
       ],
     }
@@ -299,22 +348,54 @@ export default function DriverDetail() {
         </div>
       </section>
 
-      {/* 图表区：雷达图 + 积分走势 */}
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="card p-5 sm:p-6">
-          <h2 className="heading-display text-xl text-white">
-            能力雷达图
-          </h2>
-          <p className="mb-2 text-sm text-racing-muted">
-            六维车手能力模型
-          </p>
-          {radarOption ? (
-            <Chart option={radarOption} height={360} />
-          ) : (
-            <LoadingState height={300} />
-          )}
-        </div>
-        <div className="card p-5 sm:p-6">
+      {/* Antonelli 专属：冠军时刻 + 积分走势 左右并排 */}
+      {driver.id === 'antonelli' ? (
+        <section className="relative overflow-hidden rounded-3xl border border-amber-400/30">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-400/25 via-yellow-600/10 to-racing-dark" />
+          {/* 光晕装饰 */}
+          <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-amber-400/15 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
+          <div className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,400px)_1fr]">
+            {/* 左：冠军纪念时刻 —— 竖屏视频 */}
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-base">🏆</span>
+                <h2 className="heading-display text-xl text-white">
+                  冠军纪念时刻
+                </h2>
+              </div>
+              <p className="mb-3 text-sm text-racing-muted">
+                Andrea Kimi Antonelli — 2026 世界冠军庆典
+              </p>
+              <div className="flex items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-black">
+                <video
+                  className="h-auto max-h-[640px] w-full max-w-[360px] object-contain"
+                  controls
+                  preload="metadata"
+                >
+                  <source src="/champion/celebration.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </div>
+            {/* 右：积分走势图 */}
+            <div>
+              <h2 className="heading-display mb-2 text-xl text-white">
+                {meta.season || '2026'} 赛季积分走势
+              </h2>
+              <p className="mb-2 text-sm text-racing-muted">
+                逐轮累计积分
+              </p>
+              {progressionOption ? (
+                <Chart option={progressionOption} height={400} />
+              ) : (
+                <LoadingState height={360} />
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
+        /* 其他车手：单独积分走势图 */
+        <section className="card p-5 sm:p-6">
           <h2 className="heading-display text-xl text-white">
             {meta.season || '2026'} 赛季积分走势
           </h2>
@@ -326,8 +407,8 @@ export default function DriverDetail() {
           ) : (
             <LoadingState height={300} />
           )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 定妆照大图预览 */}
       <DriverLightbox photo={preview} onClose={() => setPreview(null)} />

@@ -11,16 +11,16 @@ import DriverPhoto from './DriverPhoto'
 export default function DriverCard({ driver, rank, onPreview }) {
   return (
     <div className="card card-hover group relative flex flex-col overflow-hidden">
-      {/* 整卡跳转覆盖层（照片按钮层级更高，不会被它拦截） */}
+      {/* 整卡跳转覆盖层（层级高于信息区、低于照片按钮，不会被信息区拦截） */}
       <Link
         to={`/drivers/${driver.id}`}
         aria-label={`查看 ${driver.name} 的车手档案`}
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-[5]"
       />
 
       {/* 排行榜角标 */}
       {rank != null && (
-        <span className="absolute left-3 top-3 z-20 rounded-md bg-black/55 px-2 py-0.5 font-display text-xs font-bold text-white/80 backdrop-blur-sm">
+        <span className="pointer-events-none absolute left-3 top-3 z-20 rounded-md bg-black/55 px-2 py-0.5 font-display text-xs font-bold text-white/80 backdrop-blur-sm">
           P{rank}
         </span>
       )}

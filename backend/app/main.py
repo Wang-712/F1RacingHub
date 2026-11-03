@@ -12,6 +12,7 @@ F1 Racing Hub - FastAPI 应用入口
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -19,6 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.services import f1 as f1_service
 from app.services.jolpica import jolpica
 from app.routers import drivers, health, races, statistics, teams
 
@@ -32,7 +34,10 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     # 启动时预热连接池
     await jolpica.startup()
+    # 后台预热赛季数据大包，首个请求不必干等 Jolpica 聚合
+    warmup = asyncio.create_task(f1_service.warmup_cache())
     yield
+    warmup.cancel()
     # 关闭时释放
     await jolpica.shutdown()
 

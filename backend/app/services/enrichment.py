@@ -158,9 +158,9 @@ DRIVERS: Dict[str, dict] = {
     },
     "antonelli": {
         "birthPlace": "Bologna, Italy",
-        "bio": "在低级别赛事中统治级表现后，这位少年天才获得了 F1 最令人垂涎的席位之一。",
-        "radar": {"pace": 88, "qualifying": 89, "consistency": 82, "tyreManagement": 80, "wetSkill": 90, "racecraft": 84},
-        "careerWins": 0, "podiums": 3, "poles": 0, "championships": 0,
+        "bio": "20 岁打破 F1 历史最年轻世界冠军纪录，梅赛德斯青年军出身的意大利天才。2026 赛季以 9 场胜利、380 分惊艳夺冠，书写赛车运动全新篇章。",
+        "radar": {"pace": 92, "qualifying": 89, "consistency": 91, "tyreManagement": 85, "wetSkill": 93, "racecraft": 89},
+        "careerWins": 9, "podiums": 14, "poles": 3, "championships": 1,
     },
     "alonso": {
         "birthPlace": "Oviedo, Spain",
