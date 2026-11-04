@@ -377,8 +377,8 @@ export default function DriverDetail() {
                 </video>
               </div>
             </div>
-            {/* 右：积分走势图 */}
-            <div>
+            {/* 右：积分走势图（相对左侧视频列垂直居中） */}
+            <div className="flex flex-col justify-center">
               <h2 className="heading-display mb-2 text-xl text-white">
                 {meta.season || '2026'} 赛季积分走势
               </h2>

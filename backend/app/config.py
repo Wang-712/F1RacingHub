@@ -15,7 +15,7 @@ class Settings:
     # 免费服务有速率限制，分页请求之间的礼貌间隔（秒）
     REQUEST_INTERVAL: float = float(os.getenv("F1_REQUEST_INTERVAL", "0.6"))
     # 详情页职业数据单项抓取的最长等待（秒），超时降级到静态数据
-    CAREER_TIMEOUT: float = float(os.getenv("F1_CAREER_TIMEOUT", "50"))
+    CAREER_TIMEOUT: float = float(os.getenv("F1_CAREER_TIMEOUT", "10"))
     # 职业数据抓取失败后的负缓存（秒）：避免每次访问都重试慢上游
     CAREER_NEG_TTL: int = int(os.getenv("CAREER_NEG_TTL", "600"))
 

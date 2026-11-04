@@ -216,6 +216,23 @@ async def _build_season_bundle() -> dict:
             total += pts
             team_cumulative[cid].append(round(total))
 
+    # 上游赛果不可用时 progression 为空：用 fallback 快照的真实逐轮走势兜底，
+    # 避免"实时积分榜 + 空走势"的混合状态导致图表内容丢失。
+    if not cumulative:
+        cumulative = {
+            d["id"].replace("-", "_"): d.get("progression", [])
+            for d in _load_fallback("drivers")
+        }
+        for race in _load_fallback("races"):
+            fl = race.get("fastestLap")
+            if fl:
+                fastest_laps[fl] = fastest_laps.get(fl, 0) + 1
+    if not team_cumulative:
+        team_cumulative = {
+            t["id"].replace("-", "_"): t.get("progression", [])
+            for t in _load_fallback("teams")
+        }
+
     return {
         "season": season,
         "lastRound": last_round,
@@ -233,15 +250,19 @@ async def _build_season_bundle() -> dict:
 
 
 async def _get_bundle() -> Tuple[dict, str, bool]:
-    """返回 (bundle, source, cached)；上游失败时降级快照包。"""
+    """返回 (bundle, source, cached)。
+
+    Stale-While-Revalidate 策略：有过期旧值立即返回并后台刷新，
+    请求永远不会同步等待上游重建（冷启动除外，且启动时已播种 fallback）。
+    """
     try:
-        bundle, from_cache = await cache.get_or_fetch(
+        bundle, from_cache = await cache.get_or_fetch_swr(
             "season_bundle", settings.CACHE_SEASON_TTL, _build_season_bundle
         )
     except Exception as exc:
+        # 仅冷启动且上游失败时才会走到这里
         logger.exception("Season bundle failed, using fallback snapshot: %s", exc)
         bundle = _build_fallback_bundle()
-        # 降级结果也缓存一小段时间，避免每次请求都重复等待上游超时
         cache.set("season_bundle", bundle, settings.CACHE_SEASON_FALLBACK_TTL)
         from_cache = False
     source = "fallback" if bundle.get("_fallback") else "jolpica"
@@ -308,6 +329,7 @@ def _build_fallback_bundle() -> dict:
         "constructorStandings": cstandings,
         "resultMap": result_map,
         "progression": {d["id"].replace("-", "_"): d["progression"] for d in drivers},
+        "teamProgression": {t["id"].replace("-", "_"): t.get("progression", []) for t in teams},
         "fastestLaps": {},
         "_fallback": True,
         "_fallbackDrivers": drivers,
@@ -328,7 +350,14 @@ def _driver_view_model(row: dict, bundle: dict) -> dict:
     extra = enr.get_driver_enrichment(did)
     fallback = row.get("_fallbackDriver")
 
-    if fallback:  # 降级快照直接使用旧模型
+    if fallback:  # 降级快照直接使用旧模型，缺省字段（bio/radar 等）用 enrichment 补齐
+        extra_d = enr.get_driver_enrichment(did)
+        for key in ("bio", "birthPlace", "radar", "championships", "podiums", "poles"):
+            if not fallback.get(key) and extra_d.get(key) is not None:
+                fallback[key] = extra_d[key]
+        # careerWins 以 enrichment 为准（快照重建可能误存为赛季胜场）
+        if extra_d.get("careerWins") is not None:
+            fallback["careerWins"] = extra_d["careerWins"]
         return fallback
 
     nationality = driver.get("nationality", "")
@@ -550,11 +579,14 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
                 f"career_titles_{did}", settings.CACHE_CAREER_TTL,
                 lambda: jolpica.driver_champion_seasons(did),
             )
-            return {
-                "championships": len(
-                    titles_json["MRData"]["StandingsTable"]["StandingsLists"]
-                )
-            }
+            lists = titles_json["MRData"]["StandingsTable"]["StandingsLists"]
+            titles = sum(
+                1
+                for lst in lists
+                for row in lst.get("DriverStandings", [])
+                if row.get("position") == "1"
+            )
+            return {"championships": titles}
 
         async def _fetch_results() -> Dict[str, Any]:
             results_json, _ = await cache.get_or_fetch(
@@ -583,22 +615,23 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
                         poles += 1
             return {"poles": poles}
 
-        async def _budget(coro, label: str, cache_key: str) -> Optional[Dict[str, Any]]:
-            """限时抓取；失败/超时写入短时负缓存，避免每次访问都重试慢上游。"""
+        async def _budget(factory, label: str, cache_key: str) -> Optional[Dict[str, Any]]:
+            """限时抓取；失败/超时写入短时负缓存，避免每次访问都重试慢上游。
+            接收工厂函数而非协程对象：负缓存命中时不创建协程，避免泄漏警告。"""
             fail_key = f"{cache_key}_failed"
             if cache.get(fail_key):
                 return None
             try:
-                return await asyncio.wait_for(coro, timeout=settings.CAREER_TIMEOUT)
+                return await asyncio.wait_for(factory(), timeout=settings.CAREER_TIMEOUT)
             except Exception as exc:
                 logger.info("career %s fallback for %s: %s", label, did, exc)
                 cache.set(fail_key, True, settings.CAREER_NEG_TTL)
                 return None
 
         for part in await asyncio.gather(
-            _budget(_fetch_titles(), "titles", f"career_titles_{did}"),
-            _budget(_fetch_results(), "results", f"career_results_{did}"),
-            _budget(_fetch_poles(), "poles", f"career_poles_{did}"),
+            _budget(_fetch_titles, "titles", f"career_titles_{did}"),
+            _budget(_fetch_results, "results", f"career_results_{did}"),
+            _budget(_fetch_poles, "poles", f"career_poles_{did}"),
         ):
             if part:
                 live.update(part)
@@ -635,9 +668,17 @@ async def get_statistics_response() -> dict:
 
 
 async def warmup_cache() -> None:
-    """服务启动后后台预热赛季数据大包，让首个用户请求直接命中缓存。"""
+    """服务启动后后台拉取实时赛季大包，成功后静默替换启动时播种的快照。"""
     try:
-        await _get_bundle()
-        logger.info("Season bundle warmup complete")
+        bundle = await _build_season_bundle()
+        cache.set("season_bundle", bundle, settings.CACHE_SEASON_TTL)
+        logger.info("Season bundle warmup complete (live data)")
     except Exception as exc:
-        logger.warning("Season bundle warmup failed: %s", exc)
+        logger.warning("Season bundle warmup failed, keeping seeded snapshot: %s", exc)
+
+
+def seed_cache() -> None:
+    """启动时用本地快照立即填充缓存，保证第一个请求 0ms 命中。"""
+    if cache.get("season_bundle") is None:
+        cache.set("season_bundle", _build_fallback_bundle(), settings.CACHE_SEASON_FALLBACK_TTL)
+        logger.info("Season bundle seeded from fallback snapshot")

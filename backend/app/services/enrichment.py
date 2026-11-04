@@ -126,7 +126,7 @@ DRIVERS: Dict[str, dict] = {
         "radar": {"pace": 99, "qualifying": 95, "consistency": 92, "tyreManagement": 97, "wetSkill": 99, "racecraft": 96},
         "careerWins": 68, "podiums": 117, "poles": 44, "championships": 4,
     },
-    "lando_norris": {
+    "norris": {
         "birthPlace": "Bristol, United Kingdom",
         "bio": "F1 最耀眼的年轻天才，以惊人的单圈速度引领 McLaren 的争冠之路。",
         "radar": {"pace": 96, "qualifying": 98, "consistency": 90, "tyreManagement": 88, "wetSkill": 89, "racecraft": 92},
@@ -240,10 +240,16 @@ DRIVERS: Dict[str, dict] = {
         "radar": {"pace": 86, "qualifying": 87, "consistency": 79, "tyreManagement": 78, "wetSkill": 84, "racecraft": 82},
         "careerWins": 0, "podiums": 1, "poles": 0, "championships": 0,
     },
-    "lindblad": {
+    "arvid_lindblad": {
         "birthPlace": "Vatican City / London, United Kingdom",
         "bio": "Red Bull 的少年卡丁车天才，直接从 F2 跳级登上 F1 围场。",
         "radar": {"pace": 83, "qualifying": 85, "consistency": 74, "tyreManagement": 72, "wetSkill": 80, "racecraft": 76},
+        "careerWins": 0, "podiums": 0, "poles": 0, "championships": 0,
+    },
+    "ryo_hirakawa": {
+        "birthPlace": "Aichi, Japan",
+        "bio": "丰田 WEC 冠军车手，作为超级替补加入 2026 年 F1 围场的日本老将。",
+        "radar": {"pace": 79, "qualifying": 78, "consistency": 84, "tyreManagement": 86, "wetSkill": 82, "racecraft": 80},
         "careerWins": 0, "podiums": 0, "poles": 0, "championships": 0,
     },
     "colapinto": {

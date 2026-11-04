@@ -34,7 +34,9 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     # 启动时预热连接池
     await jolpica.startup()
-    # 后台预热赛季数据大包，首个请求不必干等 Jolpica 聚合
+    # 立即播种准确的本地快照（0ms 可用），请求不必等任何上游聚合
+    f1_service.seed_cache()
+    # 后台拉取实时数据替换快照，完成后用户无感切换为实时源
     warmup = asyncio.create_task(f1_service.warmup_cache())
     yield
     warmup.cancel()

@@ -122,9 +122,10 @@ class JolpicaClient:
         return await self.fetch(f"/drivers/{driver_id}/results.json")
 
     async def driver_champion_seasons(self, driver_id: str) -> Dict[str, Any]:
-        # Ergast 语法：年终排名作为路径段（/driverStandings/1），只返回夺冠赛季
+        # Jolpica 不支持 /driverStandings/{position}.json（返回 400），
+        # 改拉该车手历年年终积分榜，由服务端统计 position=1 的赛季数。
         return await self.fetch(
-            f"/drivers/{driver_id}/driverStandings/1.json", paginate=False
+            f"/drivers/{driver_id}/driverStandings.json", paginate=False
         )
 
     async def driver_qualifying(self, driver_id: str) -> Dict[str, Any]:

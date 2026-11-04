@@ -16,7 +16,28 @@
       "Andrea Kimi Antonelli",
       "George Russell"
     ],
-    "bio": "The dominant force of the turbo-hybrid era, rebuilding with a youthful new line-up for 2026."
+    "bio": "The dominant force of the turbo-hybrid era, rebuilding with a youthful new line-up for 2026.",
+    "progression": [
+      43,
+      98,
+      135,
+      180,
+      219,
+      244,
+      262,
+      302,
+      333,
+      358,
+      379,
+      425,
+      468,
+      503,
+      538,
+      556,
+      578,
+      607,
+      630
+    ]
   },
   {
     "id": "ferrari",
@@ -35,7 +56,28 @@
       "Lewis Hamilton",
       "Charles Leclerc"
     ],
-    "bio": "The most successful and oldest team in Formula 1 history, chasing a first drivers' title since 2007."
+    "bio": "The most successful and oldest team in Formula 1 history, chasing a first drivers' title since 2007.",
+    "progression": [
+      27,
+      67,
+      90,
+      110,
+      147,
+      165,
+      190,
+      204,
+      255,
+      285,
+      307,
+      338,
+      346,
+      358,
+      378,
+      405,
+      444,
+      474,
+      504
+    ]
   },
   {
     "id": "red-bull",
@@ -54,7 +96,28 @@
       "Max Verstappen",
       "Isack Hadjar"
     ],
-    "bio": "Four-time defending champions aiming to reclaim both titles with their star Dutch driver leading the charge."
+    "bio": "Four-time defending champions aiming to reclaim both titles with their star Dutch driver leading the charge.",
+    "progression": [
+      8,
+      12,
+      16,
+      30,
+      57,
+      72,
+      92,
+      118,
+      131,
+      154,
+      180,
+      189,
+      204,
+      230,
+      263,
+      298,
+      332,
+      355,
+      382
+    ]
   },
   {
     "id": "mclaren",
@@ -73,7 +136,28 @@
       "Lando Norris",
       "Oscar Piastri"
     ],
-    "bio": "The papaya squad leads both championships and is chasing its first constructors' crown since 1998."
+    "bio": "The papaya squad leads both championships and is chasing its first constructors' crown since 1998.",
+    "progression": [
+      10,
+      18,
+      46,
+      94,
+      106,
+      118,
+      143,
+      161,
+      181,
+      197,
+      222,
+      265,
+      287,
+      306,
+      306,
+      316,
+      339,
+      355,
+      365
+    ]
   },
   {
     "id": "rb",
@@ -93,7 +177,28 @@
       "Arvid Lindblad",
       "Yuki Tsunoda"
     ],
-    "bio": "Red Bull's sister squad, famous for developing young talent — including a certain Max Verstappen."
+    "bio": "Red Bull's sister squad, famous for developing young talent — including a certain Max Verstappen.",
+    "progression": [
+      4,
+      12,
+      14,
+      14,
+      21,
+      39,
+      45,
+      48,
+      63,
+      65,
+      70,
+      70,
+      75,
+      77,
+      83,
+      90,
+      100,
+      102,
+      108
+    ]
   },
   {
     "id": "alpine",
@@ -112,7 +217,28 @@
       "Pierre Gasly",
       "Franco Colapinto"
     ],
-    "bio": "Renault's works team in blue and pink, fighting to return to the competitive midfield and beyond."
+    "bio": "Renault's works team in blue and pink, fighting to return to the competitive midfield and beyond.",
+    "progression": [
+      1,
+      10,
+      16,
+      23,
+      35,
+      41,
+      48,
+      48,
+      51,
+      52,
+      52,
+      54,
+      62,
+      68,
+      68,
+      68,
+      68,
+      69,
+      69
+    ]
   },
   {
     "id": "haas",
@@ -132,7 +258,28 @@
       "Esteban Ocon",
       "Ryo Hirakawa"
     ],
-    "bio": "America's home team, punching above its weight with an experienced rookie line-up for 2026."
+    "bio": "America's home team, punching above its weight with an experienced rookie line-up for 2026.",
+    "progression": [
+      6,
+      17,
+      18,
+      18,
+      19,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      27,
+      27,
+      30,
+      30,
+      31
+    ]
   },
   {
     "id": "audi",
@@ -151,7 +298,28 @@
       "Gabriel Bortoleto",
       "Nico Hülkenberg"
     ],
-    "bio": ""
+    "bio": "",
+    "progression": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      6,
+      10,
+      12,
+      16,
+      16,
+      17,
+      17,
+      17,
+      23,
+      23,
+      27
+    ]
   },
   {
     "id": "williams",
@@ -170,7 +338,28 @@
       "Carlos Sainz",
       "Alexander Albon"
     ],
-    "bio": "A legendary nine-time champion constructor on a steady revival under new leadership."
+    "bio": "A legendary nine-time champion constructor on a steady revival under new leadership.",
+    "progression": [
+      0,
+      2,
+      2,
+      5,
+      7,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      12,
+      12,
+      12,
+      12,
+      12
+    ]
   },
   {
     "id": "aston-martin",
@@ -189,7 +378,28 @@
       "Fernando Alonso",
       "Lance Stroll"
     ],
-    "bio": "The green works team with grand ambitions, led on track by double world champion Fernando Alonso."
+    "bio": "The green works team with grand ambitions, led on track by double world champion Fernando Alonso.",
+    "progression": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      3,
+      3,
+      3,
+      3,
+      7,
+      7,
+      7,
+      7
+    ]
   },
   {
     "id": "cadillac",
@@ -208,6 +418,27 @@
       "Valtteri Bottas",
       "Sergio Pérez"
     ],
-    "bio": ""
+    "bio": "",
+    "progression": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
   }
 ]
