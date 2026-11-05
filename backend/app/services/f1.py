@@ -13,7 +13,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+import os
+import time
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.config import settings
@@ -43,10 +45,216 @@ def _envelope(data: Any, source: str, season: Optional[str] = None,
     return {"data": data, "meta": meta}
 
 
+def _persist_results_to_fallback(
+    result_map: Dict[int, dict],
+    schedule: list,
+    sprint_json: Optional[dict],
+) -> None:
+    """上游拉到赛果后自动写回 races.json —— 快照自动演化，
+    新比赛完赛后下次冷启动/后台刷新直接命中。"""
+    import json as _json
+    from datetime import date as _date
+
+    races_path = os.path.join(os.path.dirname(__file__), "..", "..", "fallback", "races.json")
+    try:
+        existing = _load_fallback("races")
+    except Exception:
+        existing = []
+
+    # sprint_json 是原始 Ergast 响应，按 round 索引 SprintResults
+    sprint_by_round: Dict[int, dict] = {}
+    if sprint_json:
+        for race in sprint_json.get("MRData", {}).get("RaceTable", {}).get("Races", []):
+            rnd = _to_int(race["round"])
+            sr = race.get("SprintResults", [])
+            p1 = next((r for r in sr if r.get("position") == "1"), None)
+            if p1:
+                d = p1["Driver"]
+                sprint_by_round[rnd] = {
+                    "id": d["driverId"],
+                    "name": f"{d['givenName']} {d['familyName']}",
+                    "points": float(p1.get("points", 0)),
+                }
+
+    sched_by_round = {_to_int(r["round"]): r for r in schedule}
+    races_by_round = {int(r["round"]): r for r in existing}
+
+    rebuilt = []
+    for rnd in sorted(set(list(sched_by_round.keys()) + list(races_by_round.keys()))):
+        sched = sched_by_round.get(rnd) or races_by_round.get(rnd, {})
+        entry = dict(races_by_round.get(rnd, {}))
+        entry.setdefault("round", str(rnd))
+        entry.setdefault("name", sched.get("raceName", f"Round {rnd} Grand Prix"))
+        entry.setdefault("date", sched.get("date", entry.get("date", "")))
+        entry.setdefault("laps", entry.get("laps", 57))
+        entry.setdefault("circuit", sched.get("Circuit", {}).get("circuitName", entry.get("circuit", "")))
+
+        race = result_map.get(rnd)
+        if race and race.get("Results"):
+            results = race["Results"]
+            p1 = next((r for r in results if r.get("position") == "1"), None)
+            if p1:
+                d = p1["Driver"]
+                t = p1["Constructor"]
+                entry["winner"] = {
+                    "id": d["driverId"],
+                    "name": f"{d['givenName']} {d['familyName']}",
+                    "number": int(d.get("permanentNumber", 0) or 0),
+                    "team": t["constructorId"],
+                    "teamName": t["name"],
+                }
+                entry["winningTeam"] = t["name"]
+            fl_p1 = next(
+                (r for r in results
+                 if r.get("FastestLap") and r["FastestLap"].get("rank") == "1"),
+                None,
+            )
+            if fl_p1:
+                fd = fl_p1["Driver"]
+                entry["fastestLap"] = {
+                    "id": fd["driverId"],
+                    "name": f"{fd['givenName']} {fd['familyName']}",
+                    "time": fl_p1["FastestLap"].get("Time", {}).get("time"),
+                }
+            entry["status"] = "completed"
+        else:
+            # 快照里已有赛果的轮次保持 completed，不要因为日期判断被改回 upcoming
+            if not (entry.get("status") == "completed" and entry.get("winner")):
+                if entry.get("date"):
+                    try:
+                        entry["status"] = "completed" if _date.fromisoformat(entry["date"]) < _date.today() else "upcoming"
+                    except ValueError:
+                        entry["status"] = "upcoming"
+                else:
+                    entry["status"] = "upcoming"
+
+        if rnd in sprint_by_round:
+            entry["sprintWinner"] = sprint_by_round[rnd]
+        rebuilt.append(entry)
+
+    try:
+        tmp = races_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            _json.dump(rebuilt, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, races_path)  # 原子替换，避免写一半被读到
+        logger.info("Persisted %d race results to fallback races.json",
+                    sum(1 for r in rebuilt if r.get("winner")))
+    except Exception as exc:
+        logger.warning("Failed to persist race results: %s", exc)
+
+
+def _persist_standings_to_fallback(
+    driver_standings: List[dict],
+    constructor_standings: List[dict],
+    cumulative: Dict[str, List[int]],
+    team_cumulative: Dict[str, List[int]],
+) -> None:
+    """把实时积分榜 + 逐轮走势写回 drivers.json / teams.json。
+
+    这样冷启动直接展示最新积分与走势图，不用等上游 standings 端点。
+    """
+    import json as _json
+
+    def _write(path: str, payload: Any) -> None:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            _json.dump(payload, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)  # 原子替换，避免写一半被读到
+
+    try:
+        drivers_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "fallback", "drivers.json"
+        )
+        with open(drivers_path, "r", encoding="utf-8") as f:
+            drivers = _json.load(f)
+
+        updated = 0
+        for d in drivers:
+            did = d["id"].replace("-", "_")
+            row = next((r for r in driver_standings if r["Driver"]["driverId"] == did), None)
+            if row:
+                if row.get("points") is not None:
+                    d["points"] = _to_int(row.get("points"))
+                if row.get("wins") is not None:
+                    d["seasonWins"] = _to_int(row.get("wins"))
+                if row.get("position") is not None:
+                    d["seasonPosition"] = _to_int(row.get("position"))
+                updated += 1
+            arr = cumulative.get(did)
+            if arr:
+                d["progression"] = list(arr)
+        _write(drivers_path, drivers)
+
+        teams_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "fallback", "teams.json"
+        )
+        with open(teams_path, "r", encoding="utf-8") as f:
+            teams = _json.load(f)
+        updated_t = 0
+        for t in teams:
+            cid = t["id"].replace("-", "_")
+            row = next((r for r in constructor_standings
+                        if r.get("Constructor", {}).get("constructorId") == cid), None)
+            if row:
+                t["seasonPoints"] = _to_int(row.get("points"))
+                t["seasonPosition"] = _to_int(row.get("position"))
+                updated_t += 1
+            arr = team_cumulative.get(cid)
+            if arr:
+                t["progression"] = list(arr)
+        _write(teams_path, teams)
+
+        logger.info("Persisted standings: %d drivers, %d teams", updated, updated_t)
+    except Exception as exc:
+        logger.warning("Failed to persist standings: %s", exc)
+
+
 def _load_fallback(name: str) -> Any:
     path = settings.FALLBACK_DIR / f"{name}.json"
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+# ------------------------------------------------------------------
+# 职业履历缓存：内存 → 磁盘 → 上游 三级缓存
+# 上游一次要翻几十页，落盘后重启也能秒开详情页。
+# ------------------------------------------------------------------
+
+def _career_cache_read(key: str) -> Optional[Any]:
+    path = os.path.join(str(settings.CAREER_DIR), f"{key}.json")
+    try:
+        if time.time() - os.path.getmtime(path) > settings.CACHE_CAREER_TTL:
+            return None
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def _career_cache_write(key: str, value: Any) -> None:
+    path = os.path.join(str(settings.CAREER_DIR), f"{key}.json")
+    try:
+        os.makedirs(str(settings.CAREER_DIR), exist_ok=True)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(value, f, ensure_ascii=False, separators=(",", ":"))
+        os.replace(tmp, path)
+    except OSError as exc:
+        logger.debug("Career disk cache write failed for %s: %s", key, exc)
+
+
+async def _career_cached(key: str, factory) -> Any:
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    disk = _career_cache_read(key)
+    if disk is not None:
+        cache.set(key, disk, settings.CACHE_CAREER_TTL)
+        return disk
+    value = await factory()
+    _career_cache_write(key, value)
+    cache.set(key, value, settings.CACHE_CAREER_TTL)
+    return value
 
 
 def _hyphen(id_: str) -> str:
@@ -65,92 +273,210 @@ def _to_int(value: Any, default: int = 0) -> int:
 # 赛季数据大包（一次拉取，整包缓存，供多个接口共享）
 # ====================================================================
 
-async def _build_season_bundle() -> dict:
-    """并行拉取积分榜 / 车队榜 / 赛历 / 正赛结果 / 冲刺赛结果并完成聚合。"""
-    import asyncio
+async def _fetch_json(factory, label: str, budget: float, attempts: int = 2):
+    """带超时预算 + 重试的抓取。接收工厂函数（协程不可重复 await）。
 
-    async def safe(coro, label: str, budget: float = 30.0):
+    失败返回 None，由上层降级到本地快照，绝不阻断整包构建。
+    """
+    for attempt in range(1, attempts + 1):
         try:
-            return await asyncio.wait_for(coro, timeout=budget)
-        except Exception as exc:  # 单个端点失败或超时不应拖垮整包
-            logger.warning("Jolpica endpoint %s failed: %s", label, exc)
-            return None
+            return await asyncio.wait_for(factory(), timeout=budget)
+        except Exception as exc:
+            if attempt < attempts:
+                logger.info("Jolpica %s attempt %d/%d failed, retrying: %s",
+                            label, attempt, attempts, exc)
+                await asyncio.sleep(1.0)
+            else:
+                logger.warning("Jolpica %s failed after %d attempts: %s",
+                               label, attempts, exc)
+    return None
 
-    driver_json, constructor_json, schedule_json, results_json, sprint_json = await asyncio.gather(
-        safe(jolpica.driver_standings(), "driverStandings"),
-        safe(jolpica.constructor_standings(), "constructorStandings"),
-        safe(jolpica.schedule(), "schedule"),
-        safe(jolpica.race_results(), "results", 45.0),
-        safe(jolpica.sprint_results(), "sprint", 30.0),
-    )
 
-    if driver_json is None or schedule_json is None:
-        raise JolpicaError("Required upstream endpoints unavailable")
+def _core_name(name: str) -> str:
+    """从 'Australian Grand Prix' / 'Bahrain GP in Malaysia' 提取可比对的核心词。"""
+    n = (name or "").lower().strip()
+    n = n.replace("grand prix", "").replace(" gp", "").replace("gp", "")
+    n = n.replace(" in malaysia", "").replace(" malaysia", "")
+    alias = {
+        "são paulo": "brazilian", "sao paulo": "brazilian", "brazilian": "brazilian",
+        "spanish": "spanish", "barcelona": "spanish",
+        "emilia-romagna": "emilia", "imola": "emilia",
+        "saudi arabian": "saudi", "saudi": "saudi",
+        "dutch": "dutch", "zandvoort": "dutch",
+        "mexico city": "mexico", "mexican": "mexico",
+        "united states": "us", "usa": "us", "americas": "us",
+    }
+    for old, new in alias.items():
+        if old in n:
+            n = new
+            break
+    return n.strip("- ").strip()
+
+
+def _accumulate(per_round: Dict[str, Dict[int, float]], total_rounds: int) -> Dict[str, List[int]]:
+    """逐轮得分 → 累计积分序列（缺口轮次用上一轮累计值填充）。"""
+    out: Dict[str, List[int]] = {}
+    for did, rounds in per_round.items():
+        arr: List[int] = []
+        total = 0.0
+        for rnd in range(1, total_rounds + 1):
+            total += rounds.get(rnd, 0.0)
+            arr.append(round(total))
+        out[did] = arr
+    return out
+
+
+def _extend(cum: Dict[str, List[int]], adds: Dict[str, float], rnd: int) -> None:
+    """在累计序列尾部追加一轮：所有车手先补上一轮累计值，再叠加本轮得分。"""
+    for arr in cum.values():
+        arr.append(arr[-1] if arr else 0)
+    for did, pts in adds.items():
+        arr = cum.get(did)
+        if arr is None:
+            # 中途新出现的车手：前面补零
+            cum[did] = [0] * (rnd - 1) + [round(pts)]
+        else:
+            arr[-1] += round(pts)
+
+
+async def _build_season_bundle() -> dict:
+    """增量构建赛季大包。
+
+    关键优化：本地快照里已记录的完赛轮次**不再重复请求上游**，
+    只补拉「快照缺失且已过比赛日期」的轮次，无节流锁并发执行。
+    正常情况下一次刷新只需 3~4 个上游请求（秒级完成），
+    有新比赛完赛时也只多拉 1~2 轮。
+    """
+    # ---- 第一阶段：稳定端点（积分榜 + 赛历）----
+    # jolpica 内部有节流锁，串行调用可让各自的超时预算独立计时。
+    driver_json = await _fetch_json(lambda: jolpica.driver_standings(), "driverStandings", 45.0, 2)
+    constructor_json = await _fetch_json(lambda: jolpica.constructor_standings(), "constructorStandings", 45.0, 2)
+    schedule_json = await _fetch_json(lambda: jolpica.schedule(), "schedule", 45.0, 2)
+
+    if driver_json is None:
+        raise JolpicaError("driverStandings unavailable")
 
     standings_list = driver_json["MRData"]["StandingsTable"]["StandingsLists"]
     current = standings_list[0]
     season = current["season"]
     last_round = _to_int(current["round"])
 
-    schedule = schedule_json["MRData"]["RaceTable"]["Races"]
-    total_races = len(schedule)
+    constructor_standings: List[dict] = []
+    if constructor_json is not None:
+        try:
+            constructor_standings = (
+                constructor_json["MRData"]["StandingsTable"]["StandingsLists"][0]["ConstructorStandings"]
+            )
+        except (KeyError, IndexError, TypeError):
+            constructor_standings = []
 
-    # ---- 赛果索引：round -> race（含 Results） ----
-    # Jolpica 的 results.json 按"车手记录"分页，同一轮次会出现在多个 race 对象中，
-    # 每个 race.Results 只含部分车手，因此必须按 round 合并而非覆盖。
-    # 如果上游 results 超时/不可用，降级用 fallback races 标记已完成轮次（赛历状态仍然正确）。
-    result_map: Dict[int, dict] = {}
-    if results_json:
-        for race in results_json["MRData"]["RaceTable"]["Races"]:
-            rnd = _to_int(race["round"])
-            if rnd not in result_map:
-                result_map[rnd] = race
-            else:
-                result_map[rnd]["Results"].extend(race.get("Results", []))
+    # schedule 偶尔也会 httpx 超时（虽然总体比 results 稳定）
+    # 用 fallback races.json 当 schedule 兜底，字段完全够用。
+    if schedule_json is not None:
+        schedule = schedule_json["MRData"]["RaceTable"]["Races"]
     else:
-        # 上游 results 超时：用 fallback 快照按**比赛核心名称**补全，
-        # 因为 Jolpica 的 2026 赛历和本地 fallback 可能版本不同（轮数/名称有漂移）。
-        fallback_races = _load_fallback("races")
+        fb_races = _load_fallback("races")
+        schedule = [{
+            "round": str(r["round"]),
+            "raceName": r["name"],
+            "date": r["date"],
+            "Circuit": {
+                "circuitId": "",
+                "circuitName": r["circuit"],
+                "Location": {"country": r.get("country", "")},
+            },
+        } for r in fb_races]
+        logger.warning("Schedule unavailable, using fallback races.json as schedule (%d races)", len(schedule))
 
-        def _core(name: str) -> str:
-            """从 'Australian Grand Prix' / 'Bahrain GP in Malaysia' 提取核心词 'australian' / 'bahrain'"""
-            n = (name or "").lower().strip()
-            n = n.replace("grand prix", "").replace(" gp", "").replace("gp", "")
-            n = n.replace(" in malaysia", "").replace(" malaysia", "")
-            # 特殊映射：不同赛历版本的名称差异
-            alias = {
-                "são paulo": "brazilian", "sao paulo": "brazilian", "brazilian": "brazilian",
-                "spanish": "spanish", "barcelona": "spanish",  # 部分赛历把西班牙站叫 Barcelona
-                "emilia-romagna": "emilia", "imola": "emilia",
-                "saudi arabian": "saudi", "saudi": "saudi",
-                "dutch": "dutch", "zandvoort": "dutch",
-                "mexico city": "mexico", "mexican": "mexico",
-                "united states": "us", "usa": "us", "americas": "us",
-            }
-            for old, new in alias.items():
-                if old in n:
-                    n = new
-                    break
-            return n.strip("- ").strip()
+    fallback_races = _load_fallback("races")
+    sched_core = {_to_int(s["round"]): _core_name(s.get("raceName", "")) for s in schedule}
 
-        # fallback 核心词 → race 映射（有多个同核心词取第一个 completed）
+    # ---- 第二步：快照里已记录的完赛轮次直接复用，不重复请求上游 ----
+    seeded: Dict[int, dict] = {}
+    for r in fallback_races:
+        if r.get("status") != "completed":
+            continue
+        rnd = _to_int(r.get("round"))
+        if not rnd:
+            continue
+        core = _core_name(r.get("name", "") or r.get("shortName", ""))
+        # 轮次号与赛历漂移（旧版快照）时不采信，改走下面的名称匹配
+        if core and sched_core.get(rnd) and core != sched_core[rnd]:
+            continue
+        seeded[rnd] = r
+
+    result_map: Dict[int, dict] = {rnd: {"_fallbackRace": r} for rnd, r in seeded.items()}
+    sprint_by_round: Dict[int, dict] = {}       # round -> 原始 race（含 SprintResults）
+    sprint_points: Dict[int, Dict[str, float]] = {}
+
+    # ---- 第三步：只补拉「快照缺失 + 已过比赛日期」的轮次（并发，无节流锁）----
+    today = date.today()
+
+    def _round_date(item: dict) -> Optional[date]:
+        try:
+            return date.fromisoformat(item.get("date", ""))
+        except (TypeError, ValueError):
+            return None
+
+    needed: List[int] = []
+    for item in schedule:
+        rnd = _to_int(item["round"])
+        if rnd < 1 or rnd > last_round + 1 or rnd in result_map:
+            continue
+        rd = _round_date(item)
+        # 积分榜已推进到的轮次，或比赛日期已过 → 视为需要补拉
+        if rnd <= last_round or (rd is not None and rd < today):
+            needed.append(rnd)
+
+    sem = asyncio.Semaphore(max(1, settings.ROUND_CONCURRENCY))
+
+    async def _pull_round(rnd: int):
+        async with sem:
+            res = await _fetch_json(
+                lambda: jolpica.race_results_by_round(season, rnd),
+                f"R{rnd}_results", 45.0, 2,
+            )
+            spr = await _fetch_json(
+                lambda: jolpica.sprint_results_by_round(season, rnd),
+                f"R{rnd}_sprint", 45.0, 1,
+            )
+        return rnd, res, spr
+
+    if needed:
+        for rnd, res, spr in await asyncio.gather(*[_pull_round(r) for r in needed]):
+            if res:
+                races = res.get("MRData", {}).get("RaceTable", {}).get("Races") or []
+                if races and races[0].get("Results"):
+                    result_map[rnd] = races[0]
+            if spr:
+                races = spr.get("MRData", {}).get("RaceTable", {}).get("Races") or []
+                if races and races[0].get("SprintResults"):
+                    sprint_by_round[rnd] = races[0]
+                    sprint_points[rnd] = {}
+                    for row in races[0]["SprintResults"]:
+                        did = row["Driver"]["driverId"]
+                        sprint_points[rnd][did] = sprint_points[rnd].get(did, 0.0) + float(row["points"])
+        logger.info("Fetched %d round(s) from upstream: %s", len(needed), needed)
+
+    # ---- 第四步：仍缺的轮次按比赛核心名称从快照兜底 ----
+    if len(result_map) < last_round:
         fb_by_core: Dict[str, dict] = {}
         for r in fallback_races:
             if r.get("status") != "completed":
                 continue
-            core = _core(r.get("name", "") or r.get("shortName", ""))
+            core = _core_name(r.get("name", "") or r.get("shortName", ""))
             if core and core not in fb_by_core:
                 fb_by_core[core] = r
 
-        # 遍历 Jolpica schedule（正确的 round/date/name），尝试按核心词匹配 fallback winner
         matched = 0
         for item in schedule:
             rnd = _to_int(item["round"])
-            schedule_core = _core(item.get("raceName", ""))
+            if rnd in result_map:
+                continue
+            schedule_core = sched_core.get(rnd) or _core_name(item.get("raceName", ""))
             if not schedule_core:
                 continue
             fb = fb_by_core.get(schedule_core)
-            # 再尝试：fallback 核心词 包含 在 schedule 名里
             if fb is None:
                 for fb_core, fb_race in fb_by_core.items():
                     if fb_core in schedule_core or schedule_core in fb_core:
@@ -159,89 +485,92 @@ async def _build_season_bundle() -> dict:
             if fb:
                 result_map[rnd] = {"_fallbackRace": fb}
                 matched += 1
-        logger.warning(
-            "Upstream race results unavailable, matched %d completed rounds by race core name",
-            matched,
-        )
+        if matched:
+            logger.warning("Fallback-matched %d round(s) upstream missed", matched)
 
-    # ---- 冲刺积分：round -> {driverId: points} ----
-    # 同理，sprint.json 也按车手记录分页，需用 setdefault 累加，不能每轮重置。
-    sprint_points: Dict[int, Dict[str, float]] = {}
-    if sprint_json:
-        for race in sprint_json["MRData"]["RaceTable"]["Races"]:
-            rnd = _to_int(race["round"])
-            sprint_points.setdefault(rnd, {})
-            for row in race.get("SprintResults", []):
+    # ---- 第五步：逐轮累计积分（快照走势 + 新轮次增量）----
+    cumulative: Dict[str, List[int]] = {
+        d["id"].replace("-", "_"): list(d.get("progression") or [])
+        for d in _load_fallback("drivers")
+    }
+    team_cumulative: Dict[str, List[int]] = {
+        t["id"].replace("-", "_"): list(t.get("progression") or [])
+        for t in _load_fallback("teams")
+    }
+
+    # 积分榜可能滞后于刚完赛的轮次，取二者较大值
+    fetched_completed = [rnd for rnd, race in result_map.items()
+                         if race.get("Results") and rnd not in seeded]
+    effective_last = max([last_round] + fetched_completed)
+    base_len = max([len(v) for v in cumulative.values()] + [0])
+
+    if base_len == 0:
+        # 快照无走势（首次部署）：用已有原始赛果从零重建
+        per_round: Dict[str, Dict[int, float]] = {}
+        team_round: Dict[str, Dict[int, float]] = {}
+        for rnd in range(1, effective_last + 1):
+            race = result_map.get(rnd) or {}
+            sprint_map = sprint_points.get(rnd, {})
+            for row in race.get("Results") or []:
                 did = row["Driver"]["driverId"]
-                sprint_points[rnd][did] = sprint_points[rnd].get(did, 0.0) + float(row["points"])
+                cid = row["Constructor"]["constructorId"]
+                pts = float(row["points"]) + sprint_map.get(did, 0.0)
+                per_round.setdefault(did, {})[rnd] = per_round[did].get(rnd, 0.0) + pts
+                team_round.setdefault(cid, {})[rnd] = team_round[cid].get(rnd, 0.0) + pts
+        cumulative = _accumulate(per_round, effective_last)
+        team_cumulative = _accumulate(team_round, effective_last)
+    else:
+        # 快照已连续到 base_len：只在尾部追加新完赛轮次，出现缺口就停（保持快照原样）
+        for rnd in range(base_len + 1, effective_last + 1):
+            race = result_map.get(rnd)
+            if not race or not race.get("Results"):
+                break
+            sprint_map = sprint_points.get(rnd, {})
+            adds: Dict[str, float] = {}
+            team_adds: Dict[str, float] = {}
+            for row in race["Results"]:
+                did = row["Driver"]["driverId"]
+                cid = row["Constructor"]["constructorId"]
+                pts = float(row["points"]) + sprint_map.get(did, 0.0)
+                adds[did] = adds.get(did, 0.0) + pts
+                team_adds[cid] = team_adds.get(cid, 0.0) + pts
+            _extend(cumulative, adds, rnd)
+            _extend(team_cumulative, team_adds, rnd)
 
-    # ---- 每位车手的逐轮积分 & 最快圈计数 ----
-    # 只遍历已完赛轮次（1..last_round），未比赛轮次不进入走势数组。
-    progression: Dict[str, List[float]] = {}
-    team_progression: Dict[str, List[float]] = {}
+    # 最快圈：快照已有轮次 + 本次新拉轮次
     fastest_laps: Dict[str, int] = {}
-    for rnd in range(1, last_round + 1):
-        race = result_map.get(rnd)
-        if not race:
+    for rnd, r in seeded.items():
+        fl = r.get("fastestLap")
+        name = fl.get("name") if isinstance(fl, dict) else fl
+        if name:
+            fastest_laps[name] = fastest_laps.get(name, 0) + 1
+    for rnd, race in result_map.items():
+        if rnd in seeded:
             continue
-        sprint_map = sprint_points.get(rnd, {})
-        for row in race.get("Results", []):
-            did = row["Driver"]["driverId"]
-            cid = row["Constructor"]["constructorId"]
-            pts = float(row["points"]) + sprint_map.get(did, 0.0)
-            progression.setdefault(did, [0.0] * last_round)
-            progression[did][rnd - 1] = pts
-            # 车队积分：同轮同队所有车手积分之和
-            team_progression.setdefault(cid, [0.0] * last_round)
-            team_progression[cid][rnd - 1] += pts
-            fl = row.get("FastestLap") or {}
-            if fl.get("rank") == "1":
+        for row in race.get("Results") or []:
+            if (row.get("FastestLap") or {}).get("rank") == "1":
                 name = f"{row['Driver']['givenName']} {row['Driver']['familyName']}"
                 fastest_laps[name] = fastest_laps.get(name, 0) + 1
 
-    # 累加为累计积分（车手 & 车队）
-    cumulative: Dict[str, List[int]] = {}
-    for did, rounds in progression.items():
-        total = 0.0
-        cumulative[did] = []
-        for pts in rounds:
-            total += pts
-            cumulative[did].append(round(total))
-
-    team_cumulative: Dict[str, List[int]] = {}
-    for cid, rounds in team_progression.items():
-        total = 0.0
-        team_cumulative[cid] = []
-        for pts in rounds:
-            total += pts
-            team_cumulative[cid].append(round(total))
-
-    # 上游赛果不可用时 progression 为空：用 fallback 快照的真实逐轮走势兜底，
-    # 避免"实时积分榜 + 空走势"的混合状态导致图表内容丢失。
-    if not cumulative:
-        cumulative = {
-            d["id"].replace("-", "_"): d.get("progression", [])
-            for d in _load_fallback("drivers")
-        }
-        for race in _load_fallback("races"):
-            fl = race.get("fastestLap")
-            if fl:
-                fastest_laps[fl] = fastest_laps.get(fl, 0) + 1
-    if not team_cumulative:
-        team_cumulative = {
-            t["id"].replace("-", "_"): t.get("progression", [])
-            for t in _load_fallback("teams")
-        }
+    # ---- 第六步：持久化（快照自动演化，下次冷启动直接命中）----
+    if fetched_completed:
+        sprint_json = None
+        if sprint_by_round:
+            sprint_json = {"MRData": {"RaceTable": {
+                "season": season, "Races": list(sprint_by_round.values()),
+            }}}
+        _persist_results_to_fallback(result_map, schedule, sprint_json)
+    # 积分榜与走势每次都写回（快照里的积分字段可能与上游有偏差）
+    _persist_standings_to_fallback(
+        current["DriverStandings"], constructor_standings, cumulative, team_cumulative
+    )
 
     return {
         "season": season,
-        "lastRound": last_round,
+        "lastRound": effective_last,
         "schedule": schedule,
         "driverStandings": current["DriverStandings"],
-        "constructorStandings": (
-            constructor_json["MRData"]["StandingsTable"]["StandingsLists"][0]["ConstructorStandings"]
-            if constructor_json else []
-        ),
+        "constructorStandings": constructor_standings,
         "resultMap": result_map,
         "progression": cumulative,
         "teamProgression": team_cumulative,
@@ -319,7 +648,15 @@ def _build_fallback_bundle() -> dict:
 
     result_map = {}
     for r in completed:
-        result_map[r["round"]] = {"_fallbackRace": r}
+        result_map[_to_int(r["round"])] = {"_fallbackRace": r}
+
+    # 最快圈计数：直接从快照赛果统计，冷启动也能展示真实数据
+    fastest_laps: Dict[str, int] = {}
+    for r in completed:
+        fl = r.get("fastestLap")
+        name = _name_of(fl)
+        if name:
+            fastest_laps[name] = fastest_laps.get(name, 0) + 1
 
     return {
         "season": "2026",
@@ -330,7 +667,7 @@ def _build_fallback_bundle() -> dict:
         "resultMap": result_map,
         "progression": {d["id"].replace("-", "_"): d["progression"] for d in drivers},
         "teamProgression": {t["id"].replace("-", "_"): t.get("progression", []) for t in teams},
-        "fastestLaps": {},
+        "fastestLaps": fastest_laps,
         "_fallback": True,
         "_fallbackDrivers": drivers,
         "_fallbackTeams": teams,
@@ -437,13 +774,40 @@ def _build_teams(bundle: dict) -> List[dict]:
     return teams
 
 
+def _name_of(value: Any) -> str:
+    """快照里的 winner/fastestLap 可能是对象也可能是字符串，统一取名字。"""
+    if isinstance(value, dict):
+        return value.get("name", "") or ""
+    return value or ""
+
+
+def _fallback_race_view(r: dict) -> dict:
+    """把快照里的一轮赛历转换成与实时分支完全一致的响应字段（字符串契约）。"""
+    name = r.get("name", "")
+    return {
+        "id": _to_int(r.get("round")),
+        "name": name,
+        "shortName": r.get("shortName") or name.replace(" Grand Prix", " GP"),
+        "country": r.get("country", ""),
+        "flag": r.get("flag") or enr.country_to_flag(r.get("country", "")),
+        "circuit": r.get("circuit", ""),
+        "date": r.get("date", ""),
+        "laps": r.get("laps"),
+        "round": _to_int(r.get("round")),
+        "status": r.get("status", "upcoming"),
+        "winner": _name_of(r.get("winner")),
+        "winningTeam": r.get("winningTeam", ""),
+        "fastestLap": _name_of(r.get("fastestLap")),
+    }
+
+
 def _build_races(bundle: dict) -> List[dict]:
     last_round = bundle["lastRound"]
     races = []
     for item in bundle["schedule"]:
         fb = item.get("_fallbackRace")
         if fb:
-            races.append(fb)
+            races.append(_fallback_race_view(fb))
             continue
 
         rnd = _to_int(item["round"])
@@ -459,17 +823,19 @@ def _build_races(bundle: dict) -> List[dict]:
         fastest_driver = ""
         laps = enr.CIRCUIT_LAPS.get(circuit.get("circuitId", ""))
         if result:
-            # 如果是 fallbackRace 形式（上游 results 不可用时降级），直接取简化字段
+            # fallbackRace 形式（本轮回落到快照）→ 取简化字段
             fb_res = result.get("_fallbackRace")
             if fb_res:
-                winner = fb_res.get("winner", "")
-                winner_team = fb_res.get("winningTeam", "")
-                fastest_driver = fb_res.get("fastestLap", "")
+                winner = _name_of(fb_res.get("winner"))
+                winner_team = fb_res.get("winningTeam") or (
+                    fb_res["winner"].get("teamName", "") if isinstance(fb_res.get("winner"), dict) else ""
+                )
+                fastest_driver = _name_of(fb_res.get("fastestLap"))
                 laps = fb_res.get("laps", laps)
             else:
                 rows = result.get("Results") or []
-                if rows:
-                    top = rows[0]
+                top = next((r for r in rows if r.get("position") == "1"), rows[0] if rows else None)
+                if top:
                     winner = f"{top['Driver']['givenName']} {top['Driver']['familyName']}"
                     winner_team = enr.get_constructor(
                         top["Constructor"]["constructorId"]
@@ -575,8 +941,8 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
     if not bundle.get("_fallback"):
 
         async def _fetch_titles() -> Dict[str, Any]:
-            titles_json, _ = await cache.get_or_fetch(
-                f"career_titles_{did}", settings.CACHE_CAREER_TTL,
+            titles_json = await _career_cached(
+                f"career_titles_{did}",
                 lambda: jolpica.driver_champion_seasons(did),
             )
             lists = titles_json["MRData"]["StandingsTable"]["StandingsLists"]
@@ -589,8 +955,8 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
             return {"championships": titles}
 
         async def _fetch_results() -> Dict[str, Any]:
-            results_json, _ = await cache.get_or_fetch(
-                f"career_results_{did}", settings.CACHE_CAREER_TTL,
+            results_json = await _career_cached(
+                f"career_results_{did}",
                 lambda: jolpica.driver_career_results(did),
             )
             wins = podiums = 0
@@ -604,8 +970,8 @@ async def get_driver_detail_response(driver_id: str) -> Optional[dict]:
             return {"careerWins": wins, "podiums": podiums}
 
         async def _fetch_poles() -> Dict[str, Any]:
-            qualifying_json, _ = await cache.get_or_fetch(
-                f"career_poles_{did}", settings.CACHE_CAREER_TTL,
+            qualifying_json = await _career_cached(
+                f"career_poles_{did}",
                 lambda: jolpica.driver_qualifying(did),
             )
             poles = 0

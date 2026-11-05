@@ -16,6 +16,9 @@ dist-ssr
 __pycache__/
 *.pyc
 
+# 运行时缓存（职业履历落盘缓存等）
+backend/cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

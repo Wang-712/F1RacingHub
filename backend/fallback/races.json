@@ -10,9 +10,19 @@
     "laps": 58,
     "round": 1,
     "status": "completed",
-    "winner": "George Russell",
+    "winner": {
+      "id": "russell",
+      "name": "George Russell",
+      "number": 63,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Max Verstappen"
+    "fastestLap": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "time": "1:22.091"
+    }
   },
   {
     "id": 2,
@@ -25,9 +35,24 @@
     "laps": 56,
     "round": 2,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:35.275"
+    },
+    "sprintWinner": {
+      "id": "russell",
+      "name": "George Russell",
+      "points": 8.0
+    }
   },
   {
     "id": 3,
@@ -40,9 +65,19 @@
     "laps": 53,
     "round": 3,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:32.432"
+    }
   },
   {
     "id": 4,
@@ -55,9 +90,24 @@
     "laps": 57,
     "round": 4,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Lando Norris"
+    "fastestLap": {
+      "id": "norris",
+      "name": "Lando Norris",
+      "time": "1:31.869"
+    },
+    "sprintWinner": {
+      "id": "norris",
+      "name": "Lando Norris",
+      "points": 8.0
+    }
   },
   {
     "id": 5,
@@ -70,9 +120,24 @@
     "laps": 68,
     "round": 5,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:14.210"
+    },
+    "sprintWinner": {
+      "id": "russell",
+      "name": "George Russell",
+      "points": 8.0
+    }
   },
   {
     "id": 6,
@@ -85,9 +150,19 @@
     "laps": 78,
     "round": 6,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:13.481"
+    }
   },
   {
     "id": 7,
@@ -100,9 +175,19 @@
     "laps": 66,
     "round": 7,
     "status": "completed",
-    "winner": "Lewis Hamilton",
+    "winner": {
+      "id": "hamilton",
+      "name": "Lewis Hamilton",
+      "number": 44,
+      "team": "ferrari",
+      "teamName": "Ferrari"
+    },
     "winningTeam": "Ferrari",
-    "fastestLap": "Lewis Hamilton"
+    "fastestLap": {
+      "id": "hamilton",
+      "name": "Lewis Hamilton",
+      "time": "1:20.122"
+    }
   },
   {
     "id": 8,
@@ -115,9 +200,19 @@
     "laps": 71,
     "round": 8,
     "status": "completed",
-    "winner": "George Russell",
+    "winner": {
+      "id": "russell",
+      "name": "George Russell",
+      "number": 63,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:10.374"
+    }
   },
   {
     "id": 9,
@@ -130,9 +225,24 @@
     "laps": 52,
     "round": 9,
     "status": "completed",
-    "winner": "Charles Leclerc",
+    "winner": {
+      "id": "leclerc",
+      "name": "Charles Leclerc",
+      "number": 16,
+      "team": "ferrari",
+      "teamName": "Ferrari"
+    },
     "winningTeam": "Ferrari",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:31.777"
+    },
+    "sprintWinner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "points": 8.0
+    }
   },
   {
     "id": 10,
@@ -145,9 +255,19 @@
     "laps": 44,
     "round": 10,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Lando Norris"
+    "fastestLap": {
+      "id": "norris",
+      "name": "Lando Norris",
+      "time": "1:48.890"
+    }
   },
   {
     "id": 11,
@@ -160,9 +280,19 @@
     "laps": 70,
     "round": 11,
     "status": "completed",
-    "winner": "Lando Norris",
+    "winner": {
+      "id": "norris",
+      "name": "Lando Norris",
+      "number": 1,
+      "team": "mclaren",
+      "teamName": "McLaren"
+    },
     "winningTeam": "McLaren",
-    "fastestLap": "Charles Leclerc"
+    "fastestLap": {
+      "id": "leclerc",
+      "name": "Charles Leclerc",
+      "time": "1:22.000"
+    }
   },
   {
     "id": 12,
@@ -175,9 +305,24 @@
     "laps": 72,
     "round": 12,
     "status": "completed",
-    "winner": "Lando Norris",
+    "winner": {
+      "id": "norris",
+      "name": "Lando Norris",
+      "number": 1,
+      "team": "mclaren",
+      "teamName": "McLaren"
+    },
     "winningTeam": "McLaren",
-    "fastestLap": "Charles Leclerc"
+    "fastestLap": {
+      "id": "leclerc",
+      "name": "Charles Leclerc",
+      "time": "1:14.230"
+    },
+    "sprintWinner": {
+      "id": "russell",
+      "name": "George Russell",
+      "points": 8.0
+    }
   },
   {
     "id": 13,
@@ -190,9 +335,19 @@
     "laps": 53,
     "round": 13,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Andrea Kimi Antonelli"
+    "fastestLap": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "time": "1:23.504"
+    }
   },
   {
     "id": 14,
@@ -205,9 +360,19 @@
     "laps": 57,
     "round": 14,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "George Russell"
+    "fastestLap": {
+      "id": "russell",
+      "name": "George Russell",
+      "time": "1:35.587"
+    }
   },
   {
     "id": 15,
@@ -220,9 +385,19 @@
     "laps": 51,
     "round": 15,
     "status": "completed",
-    "winner": "George Russell",
+    "winner": {
+      "id": "russell",
+      "name": "George Russell",
+      "number": 63,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "George Russell"
+    "fastestLap": {
+      "id": "russell",
+      "name": "George Russell",
+      "time": "1:44.916"
+    }
   },
   {
     "id": 16,
@@ -235,9 +410,19 @@
     "laps": 55,
     "round": 16,
     "status": "completed",
-    "winner": "Max Verstappen",
-    "winningTeam": "Red Bull Racing",
-    "fastestLap": "Max Verstappen"
+    "winner": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "number": 3,
+      "team": "red_bull",
+      "teamName": "Red Bull"
+    },
+    "winningTeam": "Red Bull",
+    "fastestLap": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "time": "1:38.220"
+    }
   },
   {
     "id": 17,
@@ -250,9 +435,24 @@
     "laps": 62,
     "round": 17,
     "status": "completed",
-    "winner": "Max Verstappen",
-    "winningTeam": "Red Bull Racing",
-    "fastestLap": "Charles Leclerc"
+    "winner": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "number": 3,
+      "team": "red_bull",
+      "teamName": "Red Bull"
+    },
+    "winningTeam": "Red Bull",
+    "fastestLap": {
+      "id": "leclerc",
+      "name": "Charles Leclerc",
+      "time": "1:35.202"
+    },
+    "sprintWinner": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "points": 8.0
+    }
   },
   {
     "id": 18,
@@ -265,9 +465,19 @@
     "laps": 56,
     "round": 18,
     "status": "completed",
-    "winner": "Andrea Kimi Antonelli",
+    "winner": {
+      "id": "antonelli",
+      "name": "Andrea Kimi Antonelli",
+      "number": 12,
+      "team": "mercedes",
+      "teamName": "Mercedes"
+    },
     "winningTeam": "Mercedes",
-    "fastestLap": "Charles Leclerc"
+    "fastestLap": {
+      "id": "leclerc",
+      "name": "Charles Leclerc",
+      "time": "1:37.976"
+    }
   },
   {
     "id": 19,
@@ -280,9 +490,19 @@
     "laps": 71,
     "round": 19,
     "status": "completed",
-    "winner": "Max Verstappen",
-    "winningTeam": "Red Bull Racing",
-    "fastestLap": "Lewis Hamilton"
+    "winner": {
+      "id": "max_verstappen",
+      "name": "Max Verstappen",
+      "number": 3,
+      "team": "red_bull",
+      "teamName": "Red Bull"
+    },
+    "winningTeam": "Red Bull",
+    "fastestLap": {
+      "id": "hamilton",
+      "name": "Lewis Hamilton",
+      "time": "1:19.268"
+    }
   },
   {
     "id": 20,
@@ -295,9 +515,9 @@
     "laps": 0,
     "round": 20,
     "status": "upcoming",
-    "winner": "",
-    "winningTeam": "",
-    "fastestLap": ""
+    "winner": null,
+    "winningTeam": null,
+    "fastestLap": null
   },
   {
     "id": 21,
@@ -310,9 +530,9 @@
     "laps": 0,
     "round": 21,
     "status": "upcoming",
-    "winner": "",
-    "winningTeam": "",
-    "fastestLap": ""
+    "winner": null,
+    "winningTeam": null,
+    "fastestLap": null
   },
   {
     "id": 22,
@@ -325,9 +545,9 @@
     "laps": 57,
     "round": 22,
     "status": "upcoming",
-    "winner": "",
-    "winningTeam": "",
-    "fastestLap": ""
+    "winner": null,
+    "winningTeam": null,
+    "fastestLap": null
   },
   {
     "id": 23,
@@ -340,8 +560,8 @@
     "laps": 58,
     "round": 23,
     "status": "upcoming",
-    "winner": "",
-    "winningTeam": "",
-    "fastestLap": ""
+    "winner": null,
+    "winningTeam": null,
+    "fastestLap": null
   }
 ]

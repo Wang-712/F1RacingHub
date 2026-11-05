@@ -118,6 +118,25 @@ class JolpicaClient:
     async def sprint_results(self, season: str = "current") -> Dict[str, Any]:
         return await self.fetch(f"/{season}/sprint.json")
 
+    async def race_results_by_round(self, season: str, rnd: int) -> Dict[str, Any]:
+        """逐轮拉取赛果 —— 小响应（<10KB），无节流锁，支持真正并发。"""
+        return await self._get_page_no_throttle(f"/{season}/{rnd}/results.json")
+
+    async def sprint_results_by_round(self, season: str, rnd: int) -> Dict[str, Any]:
+        """逐轮拉取冲刺赛结果 —— 同样小响应，无节流锁。"""
+        return await self._get_page_no_throttle(f"/{season}/{rnd}/sprint.json")
+
+    async def _get_page_no_throttle(self, path: str, limit: int = PAGE_SIZE) -> Dict[str, Any]:
+        """无节流的单次请求 —— 用于逐轮小请求，可真正并发。"""
+        sep = "&" if "?" in path else "?"
+        url = f"{path}{sep}limit={limit}&offset=0"
+        assert self._client is not None
+        response = await self._client.get(url)
+        if response.status_code == 429:
+            raise JolpicaError("Upstream rate limited (429)")
+        response.raise_for_status()
+        return response.json()
+
     async def driver_career_results(self, driver_id: str) -> Dict[str, Any]:
         return await self.fetch(f"/drivers/{driver_id}/results.json")
 
